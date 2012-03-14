@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>        
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">                                                   
+
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:tal="http://xml.zope.org/namespaces/tal">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>        
+    <link rel="stylesheet" type="text/css" href="http://www.dnswitness.net/dnswitness.css" media="screen"/>
+    <title>Rapport DNSwitness</title>     
+  </head>
+
+  <body>
+    <h1>Rapport DNSdelve</h1>
+      <p>Il y a actuellement <span tal:content="last-enabled-permillionage"/> par million de
+      domaines <code>.FR</code> avec DNSSEC activé.</p>     
+      <p><img alt="" src="dnssec.png"/></p>
+      <p><a href="dnssec.svg">Voir au format SVG</a></p>
+      <p><span tal:content="num-exec"/> exécutions de DNSwitness avec
+      le module DNSSEC. Première exécution le <span
+      tal:content="first-exec"/>. Dernière exécution le <span
+      tal:content="last-exec"/> (<span
+      tal:content="last-num-domains"/> domaines testés, échantillonage
+      à <span tal:content="last-sampling"/> %).</p>
+
+    <h2>Classement des algorithmes utilisés</h2>
+    <table>
+      <tr><th>Numéro</th><th>Description</th><th>Valeur absolue</th></tr>
+      <tr tal:repeat="algo algorithm">
+        <td tal:content="algo/number"></td><td tal:content="algo/description"></td><td tal:content="algo/count"></td>
+      </tr>
+    </table>
+
+  </body> 
+
+</html>

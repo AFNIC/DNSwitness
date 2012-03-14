@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>        
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:tal="http://xml.zope.org/namespaces/tal">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>        
+    <link rel="stylesheet" type="text/css" href="http://www.dnswitness.net/dnswitness.css" media="screen"/>
+    <title>Rapport DNSdelve</title>
+  </head>
+  <body>
+    <h1>Rapport DNSdelve</h1>
+    <h2>Destination (HTTP) des domaines redirigés dans .fr (le <span tal:replace="now"/>)</h2>
+    <p>Proportion des domaines redirigeants vers un autre domaine (quelconque) : <span tal:replace="redirections_count"/>%</p>
+    <p>Proportion des domaines redirigeants vers eux même (sous domaines...) : <span tal:replace="self_redirections"/>%</p>
+    <table>
+      <tr><th>TLD</th><th>Pourcentage des redirections</th></tr>
+      <tr tal:repeat="redirection redirections_tld">
+        <td tal:content="redirection/tld"></td><td tal:content="redirection/count"></td>
+      </tr>
+    </table>
+    <p>Proportion de mauvaises redirections : <span tal:replace="bad_redirections"/>%<br/>(une partie peut-être dûe à un manque de tolérance du module)</p>
+    <h2>Évolution dans le temps</h2>
+    <p><img alt="" src="redirections.png"/>
+    <br/><br/>
+    <a href="redirections.svg">Voir au format SVG</a></p>
+
+    <h2>Hostname vers lesquels il y a le plus de redirections</h2>
+    <table>
+      <tr><th>Hostname</th><th>Pourcentage des redirections</th></tr>
+      <tr tal:repeat="redirection redirections_auth">
+        <td tal:content="redirection/auth"></td><td tal:content="redirection/count"></td>
+      </tr>
+    </table>
+
+    <h2>Répartition des différents types de redirections</h2>
+    <p>(CNAME exclus)</p>
+    <table>
+      <tr><th>Type</th><th>Proportion des redirections</th></tr>
+      <tr tal:repeat="redirection redirections_type">
+        <td tal:content="redirection/type"></td><td tal:content="redirection/count"></td>
+      </tr>
+    </table>
+
+    <h2>AS les plus présents</h2>
+    <p>Probabilité de passer au moins une fois par l'AS X en accédant à un .fr lambda.<br/>(inclus toutes les éventuelles étapes intermédiaires des redirections HTTP/CNAME rencontrées sur le chemin)</p>
+    <table>
+      <tr><th>ASN</th><th>Gestionnaire</th><th>Proportion</th></tr>
+      <tr tal:repeat="redirection redirections_asn">
+        <td tal:content="redirection/asn"></td><td tal:content="redirection/owner"></td><td tal:content="redirection/count"></td>
+      </tr>
+    </table>
+  </body>
+</html>

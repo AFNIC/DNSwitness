@@ -1,0 +1,36 @@
+REQUIREMENTS:
+
+DNSmezzo use PostgreSQL and you therefore need a PostgreSQL server somewhere
+(We require version >= 8.3,because of the UUID type.)
+<http://www.postgresql.org/>
+
+To build DNSmezzo, you need header files of postgresql
+(eg. "libpq-dev" on Debian, "postgresql-devel" on Fedora)
+and libpcap (eg. "libpcap-dev" on Debian or "libpcap-devel" on Fedora).
+
+(We provide the dkim-regdom library, used to extract the registered
+domain from a domain name, i.e. foobar.co.uk from www.foobar.co.uk but
+ibm.com from www.rd.ibm.com.)
+
+INSTALL:
+
+Just run "make".
+Then, you can copy all the files in whatever folder you want.
+
+You then need to create the database, let's say DBNAME=dnsmezzo:
+
+createdb --encoding=UTF-8 ${DBNAME}
+createlang plpgsql ${DBNAME}
+psql -f ./create.sql ${DBNAME}
+
+USAGE:
+
+To extract (and to store in your DB) data from a regular pcap file, you usually
+need to run something like this:
+
+./packets2postgresql -v -p -c "host=DB_HOST sslmode=disable user=DB_USER password=PASSWORD dbname=DB_NAME" /PATH/TO/YOUR/PCAP_FILE
+
+You don't have to disable ssl, but it improves performances significantly and can avoid some weird bugs when inserting a lot of data (see http://postgresql.1045698.n5.nabble.com/SSL-connection-lost-after-long-lasting-copy-command-td1924246.html )
+
+$Id: README 10934 2011-07-11 13:24:26Z bortzmeyer $
+

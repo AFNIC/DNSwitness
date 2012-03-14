@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>        
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">                                                   
+
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:tal="http://xml.zope.org/namespaces/tal">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>        
+    <link rel="stylesheet" type="text/css" href="http://www.dnswitness.net/dnswitness.css" media="screen"/>
+    <title>Rapport DNSmezzo sur les domaines inexistants</title>     
+  </head>
+       
+  <body>
+    <h1>Rapport DNSmezzo sur les domaines inexistants les plus demandés</h1>
+    <p>Fait le <span tal:replace="now"/>.</p>
+    <table>
+    <div tal:repeat="domain domains">
+       <tr><td tal:content="domain/domain"></td><td tal:content="domain/count"></td></tr>
+    </div>
+    </table>
+  </body> 
+          
+</html>

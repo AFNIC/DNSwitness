@@ -1,0 +1,94 @@
+This is the documentation of the Redirections module of DNSdelve. It is
+intended to be read once you have a general knowledge of DNSdelve
+(see README, USAGE and the man page).
+
+******* Purpose and method *********
+
+The aim of this module is to study redirections and the underlying resilience
+of a domain.
+
+It allows to answer questions like "How many domains in my zone redirect to
+another zone/tld?" or "If domain/TLD/AS X go down, what part of the Y zone
+will also be affected?"
+
+It does so by querying each zone in HTTP (currently, supported redirections
+are 301, 302, 303 and HTML "refresh").
+For resilience studying, it also looks for CNAME and NS.
+
+The results are stored in a PostgreSQL DBMS and can be queried later. 
+
+******* Dependencies *************
+
+You need to install the beautifulsoup python module.
+(python-beautifulsoup on Debian or Ubuntu)
+
+The database must be created first. Here are the typical PostgreSQL
+instructions for that:
+
+createdb dnsdelve-redirections
+psql -c "CREATE LANGUAGE plpgsql;" dnsdelve-redirections
+psql -f redirections-create.sql dnsdelve-redirections
+
+This module use the "registered domain" python library.
+Please see: http://www.icir.org/gregor/tools/registered_domain.html
+To update it (with the latest Public Suffix list), just run the
+"update_registered_domains.sh" script from the "registered_domain" folder.
+
+This module use the ASN finding service from TEAM CYMRU (through DNS queries).
+If you plan to use this intensively, please warn TEAM CYMRU so they can be sure
+to maintain a stable service for the rest of the community.
+Please see: http://www.team-cymru.org/Services/ip-to-asn.html
+
+******* Usage *************
+
+To use the program:
+
+dnsdelve [dnsdelve main program arguments] -m Redirections, [-n N] [-b DB] [-d]
+
+-n (or --num_tasks) is to set the number of threads that will write in
+ the database. Its value influences only performance, not the
+ results. There is no pressing need to use this option.
+
+-b (or --database) is to set the name of the database you use. The default
+ is "dnsdelve-redirections" (just the name of the database but you can also
+ provide a full PostgreSQL "conninfo" such as "host=db.example.org
+ dbaname=mydatabase"). The datebase must have been created before and
+ its schema defined with the script redirections-create.sql.
+
+-r (or --resolvers) is a comma-separated list of IP addresses of the
+ resolver(s) to use. The default is the list indicated in
+ /etc/resolv.conf.
+
+******** Retrieving results *********
+
+The current schema of the database (see file redirections-create.sql) uses the
+general DNSdelve schema (see USAGE).
+
+Here are some example requests (you may want to filter results by UUID):
+
+-- Display all redirected domains
+SELECT o.reg_dom AS origin, t.reg_dom AS target FROM Redirect r INNER JOIN uri o ON r.orig = o.id INNER JOIN uri t ON r.target = t.id WHERE o.reg_dom != t.reg_dom;
+
+-- Display all domains which redirect to another TLD
+SELECT o.reg_dom AS origin, t.reg_dom AS target FROM Redirect r INNER JOIN uri o ON r.orig = o.id INNER JOIN uri t ON r.target = t.id WHERE o.tld != t.tld;
+
+-- Display all authorities which depend on the AS 12670
+SELECT authority AS depend_on_this_as FROM ASN WHERE asn = 12670 AND authority NOT IN (SELECT authority FROM ASN WHERE asn != 12670);
+
+-- Display the number of domains which only depend on the AS 16276
+SELECT count(DISTINCT f.reg_dom) FROM uri f WHERE f.authority IN
+     (SELECT authority FROM ASN WHERE asn = 16276 AND uuid = '37526112-2c02-4cfa-9c74-5f218b323c75'
+     AND authority NOT IN (SELECT authority FROM ASN WHERE asn != 16276 AND uuid = '37526112-2c02-4cfa-9c74-5f218b323c75'))
+AND f.reg_dom NOT IN
+    (SELECT u.reg_dom FROM ASN a JOIN uri u ON a.authority = u.authority  WHERE a.asn != 16276 AND a.uuid = '37526112-2c02-4cfa-9c74-5f218b323c75');
+
+-- Display redirections type which lead to a specific domain (you may, or may not, want to exclude CNAME to only see "visible" redirections)
+SELECT type, count(*) AS total FROM Crossed_redirections c
+    JOIN Redirect r ON c.id_redirect = r.id
+    JOIN uri o ON r.orig = o.id
+    JOIN uri t ON r.target = t.id
+    WHERE c.type != 'CNAME'
+    AND t.reg_dom = 'googlesyndication.com' AND o.reg_dom != 'googlesyndication.com'
+    AND r.uuid = '37526112-2c02-4cfa-9c74-5f218b323c75'
+    GROUP BY c.type ORDER BY total DESC;
+

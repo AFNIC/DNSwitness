@@ -1,0 +1,36 @@
+DNSdelve is a framework to gather information from the DNS zones
+delegated by a registry. It loads a list of delegated zones and
+queries them for various records.
+
+DNSdelve is optimized for periodic, unattended runs, for instance
+from a cron job. Results are typicallly stored in a databse, most of
+the time a rDBMS, to allow long-term surveys.
+
+DNSdelve is composed of a generic socle, which handles zone file
+parsing and parallel querying of the zones and a module which will
+perform the actual queries. Thus, surveying the use of DNSSEC requires
+a DNSSEC module (which will presumably ask for DNSKEY records) and
+surveying IPv6 deployment requires an IPv6 module (which will, for
+instance, ask for AAAA records for www.$DOMAIN). 
+
+In the same way, storing the results is the responsability of the
+module. In most cases, modules will use the provided DBMS mechanism,
+to put the results into a database.
+
+To actually use the program, providing you have a suitable module, see
+USAGE. The documentation of the modules is in files which are
+module-specific.
+
+If DNSdelve is not already installed on your machine, see INSTALL.
+
+To develop a module, see APIPLUGIN.
+
+To understand how DNSdelve internally works, see HOWITWORKS.
+
+Licence: GPL See the COPYING file
+
+Web site: http://www.dnsdelve.net/
+
+Author: Stephane Bortzmeyer <bortzmeyer@nic.fr>
+
+$Id: README 8433 2009-04-14 12:29:16Z bortzmeyer $

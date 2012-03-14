@@ -1,0 +1,6 @@
+For developers only
+*******************
+
+To test locally DNSdelve, the recommended command-line is:
+
+time PYTHON_LIBRARY_PATH=. ./dnsdelve -d5 --num_threads=1 --module=$MYMODULE short.db --database=essais --num_tasks=1

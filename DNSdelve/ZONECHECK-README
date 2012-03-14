@@ -1,0 +1,16 @@
+You will need the Zonecheck executable <http://www.zonecheck.fr/>
+
+Example of use:
+
+dnsdelve -p 1 -n 3 -m Zonecheck myzonefile
+
+Zonecheck is a big program, quite resource-intensive. Running dnsdelve
+with something like -n 30 (thirty Zonechecks in parallel) may kill a
+small machine.
+
+Options of the module:
+
+--profile : a Zonecheck profile (for instance "afnic")
+
+--timelimit : the maximum execution time for Zonecheck in seconds
+

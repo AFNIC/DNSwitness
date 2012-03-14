@@ -1,0 +1,110 @@
+=head1 NAME
+
+DNSdelve.CheckNameservers - a module for dnsdelve
+
+=head1 SYNOPSIS
+
+B<dnsdelve> [options] -m  CheckNameservers I<zone_file> [module_options]
+
+
+=head1 DESCRIPTION
+
+dnsdelve gathers information from the DNS. 
+It loads a list of delegated zones (from file I<zone_file>,
+which must be in RFC 1035 format) and queries them for various
+records.
+
+DNSdelve.CheckNameservers module checks if each domain name of the I<zone_file> has been properly delegated on each DNS server 
+of their parent zone. 
+
+=head1 OPTIONS
+
+DNSdelve.CheckNameservers has the following options. They all have a short form (one
+letter) and a longer form (prefixed by two dashes).
+
+Remember that dnsdelve itself has options, too (see dnsdelve documentation).
+
+=over 4
+
+=item -p --parent_zone I<domain_name>
+
+Specifies the parent zone of the domain names given in the zone file. Mandatory.
+
+=item --soa I<n>
+
+Specifies the zone file serial number against which the check will be performed.
+If one of the DNS server of the parent zone has a serial number greater than I<n>, the tests against this server will be ignored. Optionnal.
+
+=item -e --must_NOT_exist
+
+If this option is present, the module will check if each domain name of the I<zone_file> is NOT delegated  on each DNS server
+of the parent zone. 
+
+=item -h --help
+
+Prints a usage message.
+
+=item -d --debug I<n>
+
+Increases debug level. Default is zero, meaning no output. If debug level is 1, the module prints general information. If debug level is 2, the module gives per namserver information.
+
+=back
+
+
+=head1 FUNCTIONS 
+
+DNSdelve.CheckNameservers module provides the following methods (which must be called in this order) :
+
+=over 4
+
+=item config
+
+This function parses the module option list.
+Usage : module.config(args) 
+
+=item start
+
+this function only prints a start message.
+
+=item final 
+
+this function only prints a final message.
+
+=back 
+
+
+=head1 OBJECTS
+
+DNSdelve.CheckNameservers module provides two object classes :  a Plugin class and a CheckResult class. 
+
+=over 4  
+
+=item B<Plugin> 
+
+This class inherits from the BasePlugin.Plugin class. It provides a method B<query> which will query each name server of the parent zone given in the argument line and 
+check if the domains listed in the zone file are properly delegated on these name servers.
+
+Usage :
+Plugin.query(domain_name, parent_zone_name_servers)
+
+=item B<CheckResult>
+
+This class inherits from the BaseResult.Result class. It provides a method B<store> which will only print the result of the Plugin query method.
+
+Usage :
+CheckResult.store()
+
+=back 
+
+
+
+
+=head1 AUTHOR
+
+Stephane Bortzmeyer <bortzmeyer@nic.fr>
+
+=head1 SEE ALSO
+
+http://www.dnsdelve.net/
+
+

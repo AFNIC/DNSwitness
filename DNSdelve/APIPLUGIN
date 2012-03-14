@@ -1,0 +1,65 @@
+An important characteristic of DNSdelve is its ability to perform
+different surveys (DNSSEC support, IPv6 records, etc) without editing
+the main source code. DNSdelve parses the RFC 1035 zone file, runs N
+threads but does not perform the DNS queries itself, nor does it write
+directly the results.
+
+These tasks are performed by _modules_ which are written and
+maintained separately. So, you can write a module which will query
+with EDNS0 and store the results in a flat text file or another module
+which will query the LOC records and store the results in a DBMS.
+
+Modules have to be written in Python <http://www.python.org/>
+
+A module must provide three things:
+
+* a class inheriting from BaseResult. The attributes of its instances
+  will be the results of a query.
+
+* a class named Plugin which will be called by the querying
+  threads. It is *recommended* that it inherits from BasePlugin. This 
+  class _must_ have the methods:
+    def query(self, zone, nameservers):
+    def final(self):
+
+* several ancillary methods to initialize and finalize the module:
+  def config(args, zonefilename, samplingrate):
+  def start(uuid, domains):
+  def final():
+
+The Dummy module has been written for the purpose of documenting
+these requirments. It is recommended to read its source code.
+
+For a real module, but still reasonably simple, you can see the Dnssec
+one.
+
+The Utils module contain several useful utilities for the module
+author (none is mandatory). You can find in it, for instance:
+
+* a Python class, Inet, for IP addresses
+
+* the SharedDictionary class to manage a shared dictionary between
+  multiple threads or processes.
+  It only provides 3 functions:
+  - lock(key)
+  - read_or_lock(key) -> lock, try to read and return value and (only if the value was found!) unlock.
+  - write_and_unlock(key, value)
+
+* the DatabaseWriter thread class for writing in DBMS. At initialization
+  time, you need to provide it with a communication channel, a Python
+  Queue. You can then put() to this channel a list of statements which,
+  all together, translate into one or several commands.
+  Currently, we support 2 types of commands:
+  - 'table-name', {a Python dictionary which fits your database schema
+    (keys of the dictionary being SQL column names)}
+  - 'DBW_CALL_SQL_FUNCTION', 'sql_function_name', [list of parameters]
+  If there is textual data, it must be in UTF-8.
+
+A few other things to know:
+
+* the main program will provide you (with the start() method) an UUID
+  (see RFC 4122). This is an unique identifier that will help you to
+  identify without ambiguity a specific run of the main program.
+
+
+$Id: APIPLUGIN 10871 2011-06-15 14:56:33Z delvaux $

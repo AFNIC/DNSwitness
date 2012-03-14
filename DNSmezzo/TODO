@@ -1,0 +1,19 @@
+* Add a COPYING file
+
+* The dkim-regdom lib is Apache Licence v2.0 (which is NOT compatible with
+  GPL v2)
+
+* Finalize the domain name type
+
+* Extract more info such as EDNS option codes (for techniques such as
+  EDNS0-ping)
+
+* Parse and store the sections Answer and Authority (not obvious since
+  they require domain name parsing with compression pointers. And they
+  can be huge and take room in the database.
+
+* Change the DBMS to something using "vertical storage" like Infobright 
+  <http://support.infobright.com/Support/Resource-Library/Whitepapers/>?
+
+* More reporting
+

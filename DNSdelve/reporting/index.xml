@@ -1,0 +1,13 @@
+<page title="Home" pagetitle="DNSdelve results">
+
+<p>Here are the current results 
+obtained by <a href="http://www.dnsdelve.net/">DNSdelve</a> in .FR:</p>
+<ul>
+<li><a href="ipv6.html">IPv6 results</a>,</li>
+<li><a href="dnssec.html">DNSSEC results</a>,</li> 
+<li><a href="spf.html">SPF results</a> (<wikipedia name="Sender Policy Framework">SPF</wikipedia> is standardized in RFC 4408),</li>
+<li><a href="redirections.html">Redirections results</a>.</li> 
+</ul>
+
+</page>
+

@@ -1,0 +1,7 @@
+These reporting tools need simpleTAL <http://www.owlfish.com/software/simpleTAL/>
+and gnuplot <http://www.gnuplot.info/>
+You may want to use binary packages shipped by your favourite
+operating system (eg. "python-simpletal" and "gnuplot" on Debian, Ubuntu or Fedora)
+
+To generate XHTML files, you also need "xsltproc", "xmllint" and the XHTML DTD from W3C
+(for example, on your Debian machine you may install the "w3c-dtd-xhtml" package).

@@ -1,0 +1,15 @@
+<page title="Home" pagetitle="Results">
+
+<p>Here are the current results 
+obtained by <a href="http://www.dnsmezzo.net/">DNSmezzo</a> on .FR authoritative name server(s):</p>
+<ul>
+<li><a href="ipv6.html">IPv6 transport</a>,</li>
+<li><a href="qtypes.html">QTYPE demandés</a>,</li>
+<li><a href="top100.html">Domaines les plus demandés</a>,</li>
+<li><a href="nxdomain.html">Domaines inexistants les plus demandés</a>,</li>
+<li><a href="respsize.html">Taille des réponses</a>,</li>
+<li><a href="updates.html">Pourcentage de mises à jour dynamiques</a>,</li>
+</ul>
+
+</page>
+

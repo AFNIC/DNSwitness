@@ -1,0 +1,18 @@
+DNSwitness is a set of various programs to analyze DNS (Domain Name System) data. 
+
+The programs are;
+
+* DNSdelve, an active measurement framework. It uses a list of domains
+  (for instance all the subdomains of a TLD) and can query them for
+  various things such as the presence of SPF records, the IP addresses
+  of the name servers, etc
+
+* DNSmezzo, a passive measurement tool. Located in front of a name
+  server (recursive or authoritative), it parses the data and put them
+  in a SQL DBMS for easier analysis.
+
+Maintainers: AFNIC (registry of .fr), tech+github@nic.fr
+
+Licences: see individual programs but typically free software.
+
+http://www.dnswitness.net/

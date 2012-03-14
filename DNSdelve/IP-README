@@ -1,0 +1,90 @@
+This is the documentation of the IP module of DNSdelve. It is
+intended to be read once you have a general knowledge of DNSdelve
+(see README, USAGE and the man page).
+
+******* Purpose and method *********
+
+The aim of this module is to retrieve informations about servers in a zone
+(Ip, location, status, version…).
+It also can be used to measure the introduction of IPV6 under a TLD.
+It does so by querying each zone about its AAAA and A record(s) for
+various names ($DOMAIN, www.$DOMAIN, www.ipv6.$DOMAIN) and for the
+servers listed in the MX and NS records. Some tests are done at the
+same time to determine the server status (does this server really respond?)
+the AS number, the country code and the server vendor/version.
+(those tests can be disabled from the command line, see below)
+
+The results are stored in a PostgreSQL DBMS and can be queried later. 
+
+******* Dependencies *************
+
+The database must be created first. Here are the typical PostgreSQL
+instructions for that:
+
+createdb dnsdelve-ip
+createlang plpgsql dnsdelve-ip
+psql -f ip-create.sql dnsdelve-ip
+
+[You can add options to createdb such as 'createdb --encoding UTF-8
+--tablespace databases dnsdelve-ip'.]
+
+You will also need to install the GeoIP library with it's Python bindings
+(we require version >= 1.2.5 because of support for Ipv6)
+Of course, you will also need GeoIP databases, respectively
+"/usr/share/GeoIP/GeoIP.dat" and "/usr/share/GeoIP/GeoIPv6.dat".
+Your distribution may ship them (eg. "geoip-database" on Debian), but you may
+want to download an up to date version from:
+http://geolite.maxmind.com/download/geoip/database/
+(see the included script "update-geoip.sh")
+
+This module use the ASN finding service from TEAM CYMRU (through DNS queries).
+If you plan to use this intensively, please warn TEAM CYMRU so they can be sure
+to maintain a stable service for the rest of the community.
+Please see: http://www.team-cymru.org/Services/ip-to-asn.html
+
+******* Usage *************
+
+To use the program:
+
+dnsdelve [dnsdelve main program arguments] [-n N] [-b DB] [-t] [-4 | -6]
+
+-n (or --num_tasks) is to set the number of threads that will write in
+ the database. Its value influences only performance, not the
+ results. There is no pressing need to use this option.
+
+-b (or --database) is to set the name of the database you use. The
+ default is "ipv6" (just the name of the database, but you can also
+ provide a full PostgreSQL "conninfo" such as "host=db.example.org
+ dbaname=mydatabase"). The datebase must have been created before and
+ its schema defined with the script ipv6-create.sql.
+
+-r (or --resolvers) is a comma-separated list of IP addresses of the
+ resolver(s) to use. The default is the list indicated in
+ /etc/resolv.conf.
+
+-t (or --no_test) just collect Ip but do not run any tests on servers
+ (including availability test, AS number, country code and version number).
+
+-4 (or --v4_only) Only query A records.
+
+-6 (or --v6_only) Only query AAAA records.
+
+Obviously, you can't use -4 and -6 at the same time.
+
+
+******** Retrieving results *********
+
+The current schema of the database (see file ip-create.sql) uses the
+general DNSdelve schema (see USAGE). There are several specific tables,
+one for Ip, one for Zones and a Tests table for each kind of test (currently
+zone, mx, dns, www and www.ipv6). The broker table link all those things
+together with the relative run.
+
+Some views are available, to ease typical requests.
+
+An example of an interesting request is:
+
+SELECT zone FROM V6_enabled WHERE uuid='...' ORDER BY zone;
+
+to display all zones which have at least one AAAA record.
+

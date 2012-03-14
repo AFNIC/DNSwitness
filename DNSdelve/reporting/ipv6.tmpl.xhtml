@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>        
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">                                                   
+
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:tal="http://xml.zope.org/namespaces/tal">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>        
+    <link rel="stylesheet" type="text/css" href="http://www.dnswitness.net/dnswitness.css" media="screen"/>
+    <title>Rapport DNSwitness</title>     
+  </head>
+       
+  <body>
+    <h1>Rapport DNSwitness</h1>
+      <p>Il y a actuellement <span tal:content="last-enabled"/> % de
+      domaines <code>.FR</code> avec IPv6 activé (<i>v6 enabled</i>) et <span
+      tal:content="last-full"/> % qui ont IPv6 sur tous les services « essentiels » (Web, courrier et DNS, <i>v6 full</i>).</p>
+      <p><img alt="" src="ipv6.png"/></p>
+      <p><a href="ipv6.svg">Voir au format SVG</a></p>
+      <p><span tal:content="num-exec"/> exécutions de DNSwitness avec
+      le module IPv6. Première exécution le <span
+      tal:content="first-exec"/>. Dernière exécution le <span
+      tal:content="last-exec"/> (<span
+      tal:content="last-num-domains"/> domaines testés, échantillonage
+      à <span tal:content="last-sampling"/> %).</p>
+  </body> 
+          
+</html>

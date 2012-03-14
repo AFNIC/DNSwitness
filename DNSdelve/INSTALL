@@ -1,0 +1,44 @@
+These installation instructions are generic but the typical module
+will have also its own requirments (for instance, most modules require
+a DBMS). See the module documentation.
+
+DNSdelve requires Python >= 2.5.
+
+DNS queries (most modules do them) require the dnspython module
+<http://www.dnspython.org/>. Warning, there are several incompatible
+Python modules for DNS queries (for instance, PyDNS
+<http://pydns.sourceforge.net/>), most of them too simplistic for our
+purposes.
+We require dnspython >= 1.9.0.
+
+dnspython can be installed by hand but is also in binary packages for
+several operating systems (for instance, in Debian, it is
+"python-dnspython", on FreeBSD, it is "dns/py-dnspython", on Gentoo,
+"dev-python/dnspython", on Fedora "python-dns" etc).
+
+The standard DNSdelve module Utils allows modules to put data in a
+DBMS. We use PostgreSQL <http://www.postgresql.org/> and you therefore
+need a PostgreSQL server somewhere. (We require version >= 8.3,
+because of the UUID type.)
+
+To talk to PostgreSQL, we use the psycopg interface
+<http://www.initd.org/Software/psycopg/>, version >= 2.0. Again, there
+is an existing package on most OS, for instance "python-psycopg2" in
+Debian.
+
+Installation requires also:
+
+* Perl development tools for the documentation
+
+DNSdelve uses standard Python installation procedures:
+
+% python setup.py build
+
+# python setup.py install
+[The above typically requires to be root.]
+
+[But you can also keep all the files in a directory of your choice
+(for instance /usr/local/dnsdelve) and run "./dnsdelve" from this
+directory. This is convenient, for instance, for development.]
+
+$Id: INSTALL 10672 2011-05-09 12:17:03Z delvaux $

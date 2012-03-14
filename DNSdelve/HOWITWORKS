@@ -1,0 +1,100 @@
+DNSdelve is composed of a generic socle, which handles zone file
+parsing and parallel querying of the zones and a module which will
+perform the actual queries. Thus, surveying the use of DNSSEC requires
+a DNSSEC module (which will presumably ask for DNSKEY records) and
+surveying IPv6 deployment requires an IPv6 module (which will, for
+instance, ask for AAAA records for www.$DOMAIN).
+
+Other examples of surveys which could be performed with DNSdelve:
+
+* how many zones have an email authentication scheme such as SPF (RFC
+  4408) or DKIM (RFC 4871)
+
+* how many servers www.$DOMAIN.example are actually reachable with
+  IPv6 (it requires an HTTP test, not just DNS)
+
+* what are the programs used by the name servers (using techniques
+  similar to fpdns)
+
+* does the name server support EDNS0
+
+A trivial way to perform surveys like SPF deployment would be
+something like:
+
+for domain in $(cat $DOMAINS); do
+    dig +short TXT $domain | grep "v=spf1"
+done
+
+This code works but is very inefficient:
+* a few broken domains, where dig would have to wait for the timeout,
+  would delay everyone
+* results are not stored properly, making repeating and comparing
+  surveys quite difficult
+
+To address the first issue, DNSdelve uses threads. It creates N
+threads, each receiving M domains to query. Measurements showed that,
+for a zone file of one million delegations, the best N is around
+15,000. (An alternative would have been to use an asynchronous stub
+resolver, but this would have limited DNSdelve to pure DNS surveys.)
+
+To address the second issue, the module is supposed to provide a
+method to store the results. The DNSdelve scheduler will call the
+module to perform the query, get a Result object back and call its
+store() method. The recommended implementation of store() is to write
+in a RDBMS and code is provided to help in that case.
+
+The code is written in Python <http://www.python.org/> for its ease of
+writing and reading, a good threading library, availability of DNS
+modules, and for the disponibility of one (actually, several) free
+software implementation. It uses the OO principles, for instance a
+result is an object, with methods to display it, store it, etc.
+
+The general algorithm of DNSdelve is:
+
+   for every zone in the file  -- 1) This iterator is in the generic part
+       query the zone          -- 2) DNSdelve, by default, only
+                               --    provides an empty subprogram
+                               --    here. Every module is supposed to
+                               --    implement its querying routine. A 
+                               --    module for IPv6 surveys will, for
+                               --    instance, query the AAAA record
+       store results           -- 3) typically in a database
+
+A future version may implement an iteration by name server, not by zone.
+
+DNSdelve goes through an ordinary DNS resolver to make queries. It
+can be BIND or Unbound or PowerDNS Recursor.Using a recursor
+guarantees "proper" DNS requests to the outside and shields you of
+Kaminsky-style DNS attacks.
+
+The DNS library currently used (actually, it depends on the module) is
+DNS Python <http://www.dnspython.org/>. Although of very good quality
+and documentation, it seems no longer maintained, which may be a
+problem.
+
+Since DNSdelve is intended to run periodically (for instance,
+launched by cron each month), you need a way to identify unambiguously
+a given scan. That is why each run of DNSdelve generates an unique
+UUID <http://en.wikipedia.org/wiki/Universally_Unique_Identifier> (see
+also RFC 4122). This UUID is stored in the database along with the
+results.
+
+Each module is free to provide the store() method it wants. But most
+module authors will probably use the Utils package, shipped with
+DNSdelve, which provides helpers for various functions. In the
+typical case, store() will just send data to a specialized thread,
+DatabaseWriter, which will do the writing in the database. Each module
+chooses its data model but the typical one will include:
+
+       uuid   -- The UUID of the run
+       date   -- The date, some people may prefer it to the UUID
+       domain -- The name actually tested (for a given zone, several
+              -- domain names may be used, for instance, for IPv6 surveys,
+              -- $ZONE, www.$ZONE, www.ipv6.$ZONE, etc)
+       zone   -- the zone we survey (DatabaseWriter automatically
+              -- fills this one)
+       broken -- Is the zone broken? (Meaning no DNS query succeeded)
+       -- then, module-specific data
+
+
+$Id: HOWITWORKS 8433 2009-04-14 12:29:16Z bortzmeyer $

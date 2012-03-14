@@ -1,0 +1,31 @@
+* Patrick Maigron's measures on IPv6 penetration were the original
+  reason we started this project
+  <http://www-public.it-sudparis.eu/~maigron/>
+
+* JPRS, the ".jp" registry makes for a long time detailed measures on
+  IPv6 use <http://v6metric.inetcore.com/en/index.html>
+
+* iis.se "engine", part of their dnscheck tools, allows scanning the
+  entire zone to test every subdomain is properly configured, and is
+  distributed as free software
+  <http://opensource.iis.se/trac/dnscheck/wiki/Engine>
+
+* Everyone one knows CAIDA <http://www.caida.org/> measurements, often
+  done with their in-house tool HostDB.
+
+* The IPv6 module of DNSdelve took a lot of inspiration from the
+  methodology in
+  <http://www.ripe.net/ripe/meetings/ripe-56/presentations/Garcia-IPv6_Real_Life.pdf>
+
+* For DNSSec deployment measures, SecSpider
+  <http://secspider.cs.ucla.edu/about.html> is a good example
+
+* The ".cat" registry made measures, too, with a tool (publically
+ released) described in
+ <https://www.centr.org/main/4590-CTR/version/default/part/AttachmentData/data/GA37%20-%20Ippa%20-%2008-CENTR-Pisa(2).pdf>
+
+* A big set of surveys can be found in
+  <http://dns.measurement-factory.com/surveys/200608.html>
+
+
+$Id: RELATED-WORK 8433 2009-04-14 12:29:16Z bortzmeyer $

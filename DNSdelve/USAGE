@@ -1,0 +1,80 @@
+[If DNSdelve is not already installed on your machine, see INSTALL.]
+
+To use DNSdelve, you need a working module for the specific survey
+you want to perform.
+
+You are warned that DNSdelve may generate a lot of traffic towards
+the measured zones. Be sure that you have some legitimacy to generate
+this traffic. It may be better to warn the potential targets (for
+instance, if you are a TLD manager, you may warn your registrars). The
+use of option "--percentage" may be wise.
+
+This document is for the generic DNSdelve program: each module will
+bring its own usage instructions.
+
+For details, see the man page "dnsdelve". (Its source is a POD
+<http://en.wikipedia.org/wiki/Plain_Old_Documentation> file,
+dnsdelve.pod. The man page itself should be produced automatically
+at installation time, but, if it is not, POD files can be read
+directly by an ordinary human being.)
+
+DNSdelve uses an ordinary DNS resolver to make queries. That mean
+you need a not-too-loaded BIND or Unbound or PowerDNS Recursor on your
+machine. The way to indicate the resolver(s) depends on the module but
+it is typically the module -r option, for instance '-r
+2001:db8:42::53,192.0.2.53' will use the two resolvers whose IP
+addresses are indicated.
+
+DNSdelve is sensitive to temporary network failures: if no name
+server for the zone is reachable, it stops immediately for this zone,
+there is no second chance.
+
+Here are some examples (*.db are RFC 1035 zone files):
+
+Run with the Dummy module:
+
+ dnsdelve -m Dummy example.db --ignored-last-arg
+
+or:
+
+ dnsdelve --num_threads=2 --debug=5 -m Dummy example.db 
+
+Run with the Dnssec module for a big zone (screen or a similar program
+is recommended):
+
+ time dnsdelve --num_threads=15000 --report_every=100 -d 1 -m Dnssec fr.db --num_tasks=20 
+
+For such a zone, you will need a big machine with a lot of
+memory. (".fr", with its 1.1 million domains, requires 3 Gb of
+resident memory. Otherwise, you swap.)
+
+To run DNSdelve periodically, you typically need a scheduler like cron.
+
+Each run of DNSdelve generates an unique UUID
+<http://en.wikipedia.org/wiki/Universally_Unique_Identifier>, see also
+RFC 4122. It is displayed if you run with debug > 0 (otherwise, it can
+be found in the database by looking at the time stamps). It allows you
+to identify unambiguously a given run.
+
+After the run is over, querying the database is done in a
+module-dependent way. But, for the typical module, it will be with
+standard SQL requests. Most requests will include a 'WHERE uuid=...'
+to limit them to a specific run. Here we use the PostgreSQL
+interpreter (refer to the module documentation for the schema):
+
+dnssec=> SELECT domain,dnskey FROM Tests WHERE uuid='f72c33a6-7c3c-44e2-b743-7e67edf98f6c';
+     domain     | dnskey 
+----------------+--------
+ bortzmeyer.org | f
+ sources.org    | t
+...
+
+or (find all the zones signed with DNSSEC):
+
+dnssec=> SELECT count(domain) FROM Tests WHERE uuid='f72c33a6-7c3c-44e2-b743-7e67edf98f6c' AND nsec;
+ count 
+-------
+     3
+
+
+$Id: USAGE 10130 2010-09-06 08:46:27Z bortzmeyer $

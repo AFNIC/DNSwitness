@@ -1,0 +1,70 @@
+=head1 NAME
+
+dnsdelve - a program to query the delegated DNS zones of a domain (typically a TLD)
+
+=head1 SYNOPSIS
+
+B<dnsdelve> [options] -m I<module_name> I<zone_file> [module_options]
+
+=head1 DESCRIPTION
+
+dnsdelve gathers information from the DNS zones delegated by a
+registry. It loads a list of delegated zones (from file I<zone_file>,
+which must be in RFC 1035 format) and queries them for various
+records.
+
+It requires a module (specfied as I<module_name>) to perform the
+per-zone processing.
+
+=head1 OPTIONS
+
+The following options are recognized. They all have a short form (one
+letter) and a longer form (prefixed by two dashes).
+
+Remember that the module has options, too (not documented here).
+
+=over 4
+
+=item -m --module I<name>
+
+Loads the specified module. Mandatory, no default.
+
+=item -d --debug I<n>
+
+Increases the verbosity level. Default is 0, meaning no output (except
+errors). Level 1 gives general (independant of the number of threads)
+information such as the number of domains to be processed and the
+progress (depending on the -r option). Level 2 gives per-thread
+messages so, with many threads (the -n option), it starts to become
+unreadable. Level 3 gives per-query messages so, for large zone files,
+it overwhelms you with messages.
+
+=item -n --num_threads I<n>
+
+Specifies the number of threads. 
+
+=item -l --plain_file 
+
+Indicates that the "zone file" is actually a plain text file, with one
+domain per line (default is to assume it is a RFC 1035 zone file).
+
+=item -r --report_every I<n>
+
+Too broken today. TODO
+
+=item -p --percentage I<x>
+
+Percentage of the domains in the zone file to query. The default is 1,
+meaning 100 %. Any float number > 0 and < 1 is accepted.
+
+=back
+
+=head1 AUTHOR
+
+Stephane Bortzmeyer <bortzmeyer@nic.fr>
+
+=head1 SEE ALSO
+
+http://www.dnsdelve.net/
+
+

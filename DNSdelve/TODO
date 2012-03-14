@@ -1,0 +1,108 @@
+* IWBN to be able to give options to Utils, such as the debugging
+   level
+
+* i18n of the messages
+
+* bug "genericrdata":
+  Traceback (most recent call last):
+  File "Run.py", line 45, in run
+  File "/home/bortzmeyer/R&D/Devel/DNSwitness/Ipv6.py", line 257, in query
+  File "/home/bortzmeyer/R&D/Devel/DNSwitness/Ipv6.py", line 209, in queries
+  File "/home/bortzmeyer/R&D/Devel/DNSwitness/Ipv6.py", line 188, in one_query
+  File "/usr/lib/python2.5/site-packages/dns/resolver.py", line 664, in query
+  File "/usr/lib/python2.5/site-packages/dns/resolver.py", line 117, in __init__
+  AttributeError: 'GenericRdata' object has no attribute 'target' 
+  Fatal: DNS Querier 3545: Cannot query domain briceblazy.fr
+  ...
+  Heisenbug, hard to reproduce, seems to have disappeared in recent versions
+
+* Allows to make queries directly to the authoritative name servers,
+   without going through a resolver. Warning: this may be a security
+   weakness in case of a Kaminsky attack. But this risk may be low for
+   a testing program like ours.
+
+* Document the SPF and DKIM modules. The DKIM module is currently
+   quite broken. It does not detect domains like yahoogroupes.fr or
+   20mn.fr which have DKIM (and no wildcards).
+
+* Modify the SPF module to keep track of which use TXT and which use
+  the SPF record
+
+* Merge the DKIM and the SPF database
+
+* Query the LOC records (query $DOMAIN and www.$DOMAIN). May be using 
+   a GIS system for PostgreSQL to store the results?
+
+* An HTTP module which will retrieve Server: headers, to publish stats
+   about the server type.
+
+* A "servers" module which will retrieve from the DNS the IP addresses
+   of a domain's servers (typically, Web servers) for surveying the
+   largest ones (and the largest /28 and so on). Bonus: do actual
+   requests like in the HTTP Server: module?
+
+* Finish the Wildcards module (store wildcards per RR type - A, MX,
+   TXT, etc) and document it
+
+* A module for XMPP. Search the SRV record of the domain?
+
+* A module to detect "mail only" domains (only working MX but no
+   "www.$DOMAIN")
+
+* A module to detect "web only" domains (no MX, no SMTP server for the
+   A, etc)
+
+* A module to perform Zonecheck tests
+
+* Add the nameservers of each zone in Utils' write_domains
+
+* Descriptors bug (asked to dnspython on 2008-10-09):
+Traceback (most recent call last):
+  File "Run.py", line 45, in run
+    result = myplugin.query(domain, nameservers)
+  File "/home/bortzmeyer/R&D/Devel/DNSwitness/Ipv6.py", line 255, in query
+    fullresult = self.queries(zone, nameservers)
+  File "/home/bortzmeyer/R&D/Devel/DNSwitness/Ipv6.py", line 197, in queries
+    (zone_broken, result) = self.one_query(zone, 'AAAA');
+  File "/home/bortzmeyer/R&D/Devel/DNSwitness/Ipv6.py", line 186, in one_query
+    result = myresolver.query (qname, qtype)
+  File "/usr/lib/python2.5/site-packages/dns/resolver.py", line 609, in query
+    timeout, self.port)
+  File "/usr/lib/python2.5/site-packages/dns/query.py", line 122, in udp
+    _wait_for_writable(s, expiration)
+  File "/usr/lib/python2.5/site-packages/dns/query.py", line 73, in _wait_for_writable
+    _wait_for([], [s], [s], expiration)
+  File "/usr/lib/python2.5/site-packages/dns/query.py", line 61, in _wait_for
+    (r, w, x) = select.select(ir, iw, ix, timeout)
+ValueError: filedescriptor out of range in select()
+Fatal: DNS Querier 1027: Cannot query domain phaseview.fr
+http://www.velocityreviews.com/forums/t318869-re-filedescriptor-out-of-range-in-select.html
+Specially:
+http://mail.python.org/pipermail/python-list/2003-June/211817.html
+Possible solutions: dnspython's poll patch, using FreeBSD, etc
+
+* Timeout on HTTP sockets to handle MTU issues (the TCP connection
+   works but a MTU issue prevents the page to arrive)?
+ settimeout( value) Set a
+ timeout on blocking socket operations. The value argument can be a
+ nonnegative float expressing seconds, or None. If a float is given,
+ subsequent socket operations will raise an timeout exception if the
+ timeout period value has elapsed before the operation has
+ completed. Setting a timeout of None disables timeouts on socket
+ operations. s.settimeout(0.0) is equivalent to s.setblocking(0);
+ s.settimeout(None) is equivalent to s.setblocking(1). New in version
+ 2.3.
+ BUT:
+  Timeout mode internally sets the socket in non-blocking mode. The
+  blocking and timeout modes are shared between file descriptors and
+  socket objects that refer to the same network endpoint. A consequence
+  of this is that file objects returned by the makefile() method must
+  only be used when the socket is in blocking mode; in timeout or
+  non-blocking mode file operations that cannot be completed immediately
+  will fail.
+ Two good ideas at <http://stackoverflow.com/questions/492519/timeout-on-a-python-function-call>
+
+* Make Utils.py database-independant: put SQL stuff in a separate
+  module and then use options to run slightly different code depending
+  on the SQL engine used (request from IIS.se)
+
