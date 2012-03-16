@@ -232,7 +232,7 @@ main(int argc, char *argv[])
     char           *filename, *ct, *hostname[MAX_NAME], errbuf[PCAP_ERRBUF_SIZE];
     pcap_parser_file *inputfile;
     struct dns_packet *packet;
-    char            ch;
+    int             ch;
     unsigned long   packetnum = 0;
 
     /* PostgreSQL-related variables */
@@ -250,7 +250,7 @@ main(int argc, char *argv[])
     unsigned int    file_id;
 
     progname = argv[0];
-    while ((ch = (char) getopt(argc, argv, "nvm:c:p")) != -1) {
+    while ((ch = getopt(argc, argv, "nvm:c:p")) != -1) {
         switch (ch) {
         case 'v':
             verbose = true;
