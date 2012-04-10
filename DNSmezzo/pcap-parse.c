@@ -187,6 +187,10 @@ get_next_packet(struct dns_packet *decoded, pcap_parser_file * input)
                 next_v6_header = frag->frag_next;
                 size_header = SIZE_FRAGMENT_HDR;
             } else {
+			  /* TODO: RFC 6564 says that the *future* headers will
+				 have the same format as Destination Options, with a
+				 length field, so we may be able to jump them even
+				 without knowledge of their content. */
                 end_of_headers = true;
             }
             where_am_i = where_am_i + size_header;
