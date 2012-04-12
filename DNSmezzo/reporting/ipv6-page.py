@@ -8,9 +8,10 @@ import time
 import Utils
 
 encoding = "UTF-8"
-sniffer = "jezabel"
+sniffer = "lilith"
+num_probes = 3
 
-conn = psycopg2.connect("dbname=dnsmezzo3")
+conn = psycopg2.connect("dbname=dnsmezzo")
 cursor = conn.cursor()
 
 html_page = open("ipv6.tmpl.xhtml")
@@ -22,12 +23,16 @@ locale.setlocale(locale.LC_NUMERIC, "fr_FR.%s" % encoding)
 # But month names are OK
 locale.setlocale(locale.LC_TIME, "fr_FR.%s" % encoding)
 
-(last_sunday_id, last_tuesday_id, last_tuesday_date) = Utils.get_set_days(cursor, sniffer, 1).next()
-cursor.execute("SELECT count(id) FROM DNS_packets WHERE query AND (file=%(sunday)s OR file=%(tuesday)s);", 
-                   {'sunday': last_sunday_id, 'tuesday': last_tuesday_id})
+filter = ""
+for (id, last_date) in Utils.get_set_days(cursor, sniffer, limit=num_probes*2):
+    if filter == "":
+        filter = "file=%i" % id
+    else:
+        filter += " OR file=%i" % id
+cursor.execute("SELECT count(id) FROM DNS_packets WHERE query AND (%s);" % filter)
 total_queries = int(cursor.fetchone()[0])
-cursor.execute("SELECT count(id) FROM DNS_packets WHERE query AND family(src_address)=6 AND (file=%(sunday)s OR file=%(tuesday)s);", 
-               {'sunday': last_sunday_id, 'tuesday': last_tuesday_id})
+cursor.execute("SELECT count(id) FROM DNS_packets WHERE query AND family(src_address)=6 AND (%s);" % \
+                   filter)
 context.addGlobal("v6-queries", "%2.1f" % ((float(cursor.fetchone()[0])*100)/total_queries))
 
 rendered = simpleTALUtils.FastStringOutput()

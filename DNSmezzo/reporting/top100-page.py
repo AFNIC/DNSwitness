@@ -8,10 +8,11 @@ import time
 import Utils
 
 encoding = "UTF-8"
-sniffer = "jezabel"
-limit = 100
+sniffer = "lilith"
+num_probes = 3
+limit_domains = 100
 
-conn = psycopg2.connect("dbname=dnsmezzo3")
+conn = psycopg2.connect("dbname=dnsmezzo")
 cursor = conn.cursor()
 
 html_page = open("top100.tmpl.xhtml")
@@ -23,13 +24,17 @@ locale.setlocale(locale.LC_NUMERIC, "fr_FR.%s" % encoding)
 # But month names are OK
 locale.setlocale(locale.LC_TIME, "fr_FR.%s" % encoding)
 
-(last_sunday_id, last_tuesday_id, last_tuesday_date) = Utils.get_set_days(cursor, sniffer, 1).next()
+filter = ""
+for (id, last_date) in Utils.get_set_days(cursor, sniffer, limit=num_probes*2*5):
+    if filter == "":
+        filter = "file=%i" % id
+    else:
+        filter += " OR file=%i" % id
 
-cursor.execute("SELECT count(id) FROM DNS_packets WHERE query AND (file=%(sunday)s OR file=%(tuesday)s);", {'sunday': last_sunday_id, 'tuesday': last_tuesday_id})
+cursor.execute("SELECT count(id) FROM DNS_packets WHERE query AND %s;" % filter)
 total_queries = float(cursor.fetchone()[0])
 
-cursor.execute("SELECT DISTINCT registered_domain AS domain, count(registered_domain) AS num FROM DNS_packets WHERE (file=%(sunday)s OR file=%(tuesday)s) AND query GROUP BY registered_domain ORDER BY num DESC LIMIT %(limit)s", 
-                   {'sunday': last_sunday_id, 'tuesday': last_tuesday_id, 'limit': limit})
+cursor.execute("SELECT DISTINCT registered_domain AS domain, count(registered_domain) AS num FROM DNS_packets WHERE %s AND query GROUP BY registered_domain ORDER BY num DESC LIMIT %i" % (filter, limit_domains))
 domains = []
 for (domain, count) in cursor.fetchall():
     domains.append({'domain': unicode(domain, "latin-1"), 'count': (count*100/total_queries)})

@@ -7,9 +7,9 @@ import time
 import Utils
 
 encoding = "UTF-8"
-sniffer = "jezabel"
+sniffer = "lilith"
 
-conn = psycopg2.connect("dbname=dnsmezzo3")
+conn = psycopg2.connect("dbname=dnsmezzo")
 cursor = conn.cursor()
 
 interesting_qtypes = {1: 'A', 2: 'NS', 15: 'MX', 28: 'AAAA'}
@@ -24,22 +24,24 @@ def by_type (l, r):
     else:
         return 0
 
-for (last_sunday_id, last_tuesday_id, last_tuesday_date) in \
-        Utils.get_set_days(cursor, sniffer):
+for (last_id, last_tuesday_date) in \
+        Utils.get_set_days(cursor, sniffer, limit=200):
     # TODO: validity control, that the id exists and that there is < 10 days between the dates
     cursor.execute("""SELECT count(results.id) FROM 
              (SELECT id, qtype FROM dns_packets 
-                  WHERE (file=%(sunday)s OR file=%(tuesday)s) AND query) AS Results
-        """,  {'sunday': last_sunday_id, 'tuesday': last_tuesday_id})
+                  WHERE file=%(id)s AND query) AS Results
+        """,  {'id': last_id})
     total = int(cursor.fetchone()[0])
+    if total == 0:
+        continue
     cursor.execute("""
        SELECT qtype,
           count(results.id) AS requests FROM 
              (SELECT id, qtype FROM dns_packets 
-                  WHERE (file=%(sunday)s OR file=%(tuesday)s) AND query) AS Results
+                  WHERE file=%(id)s AND query) AS Results
               GROUP BY qtype ORDER BY qtype;
               """,
-                   {'sunday': last_sunday_id, 'tuesday': last_tuesday_id})
+                   {'id': last_id})
     values = {}
     for tuple in cursor.fetchall():
         qtype = int(tuple[0])

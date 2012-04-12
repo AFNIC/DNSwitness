@@ -8,10 +8,10 @@ import time
 import Utils
 
 encoding = "UTF-8"
-sniffer = "jezabel"
+sniffer = "lilith"
 limit = 100
 
-conn = psycopg2.connect("dbname=dnsmezzo3")
+conn = psycopg2.connect("dbname=dnsmezzo")
 cursor = conn.cursor()
 
 html_page = open("nxdomain.tmpl.xhtml")
@@ -28,6 +28,7 @@ cursor.execute("SELECT DISTINCT registered_domain AS domain, count(registered_do
                    {'sunday': last_sunday_id, 'tuesday': last_tuesday_id, 'limit': limit})
 domains = []
 for (domain, count) in cursor.fetchall():
+    domain = domain.replace(' ', '<SPACE>')
     domains.append({'domain': unicode(domain, "latin-1"), 'count': count})
 context.addGlobal ("domains", domains)
 

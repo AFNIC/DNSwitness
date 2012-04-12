@@ -8,9 +8,9 @@ import time
 import Utils
 
 encoding = "UTF-8"
-sniffer = "jezabel"
+sniffer = "lilith"
 
-conn = psycopg2.connect("dbname=dnsmezzo3")
+conn = psycopg2.connect("dbname=dnsmezzo")
 cursor = conn.cursor()
 
 html_page = open("qtypes.tmpl.xhtml")
@@ -22,18 +22,18 @@ locale.setlocale(locale.LC_NUMERIC, "fr_FR.%s" % encoding)
 # But month names are OK
 locale.setlocale(locale.LC_TIME, "fr_FR.%s" % encoding)
 
-(last_sunday_id, last_tuesday_id, last_tuesday_date) = Utils.get_set_days(cursor, sniffer, 1).next()
-cursor.execute("SELECT count(id) FROM DNS_packets WHERE query AND (file=%(sunday)s OR file=%(tuesday)s);", 
-                   {'sunday': last_sunday_id, 'tuesday': last_tuesday_id})
+(last_id, last_tuesday_date) = Utils.get_set_days(cursor, sniffer, 1).next()
+cursor.execute("SELECT count(id) FROM DNS_packets WHERE query AND file=%(last_id)s;", 
+                   {'last_id': last_id})
 total_queries = int(cursor.fetchone()[0])
 cursor.execute("""SELECT (CASE WHEN type IS NULL THEN qtype::TEXT ELSE type END), 
        meaning, 
        count(results.id) AS requests FROM 
              (SELECT id, qtype FROM dns_packets 
-                  WHERE (file=%(sunday)s OR file=%(tuesday)s) AND query) AS Results
+                  WHERE file=%(last_id)s AND query) AS Results
           LEFT OUTER JOIN DNS_types ON qtype = value
               GROUP BY qtype, type, meaning ORDER BY requests desc;""", 
-               {'sunday': last_sunday_id, 'tuesday': last_tuesday_id})
+               {'last_id': last_id})
 qtypes_results = []
 for tuple in cursor.fetchall():
     qtypes_results.append({'type': tuple[0], 'meaning': tuple[1], 
