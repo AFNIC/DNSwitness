@@ -25,8 +25,12 @@
 /* Ethernet addresses are 6 bytes */
 #define ETHER_ADDR_LEN	6
 
+#define SLL_ADDR_LEN	8
+
 /* Ethernet headers are always exactly 14 bytes */
 #define SIZE_ETHERNET 14
+
+#define SIZE_SLL 16
 
 #define SIZE_IPv6 40
 
@@ -52,6 +56,15 @@ struct sniff_ethernet {
     uint8_t         ether_dhost[ETHER_ADDR_LEN];        /* Destination host address */
     uint8_t         ether_shost[ETHER_ADDR_LEN];        /* Source host address */
     uint16_t        ether_type; /* IP? ARP? RARP? etc */
+};
+
+/* Linux cooked mode SLL http://www.tcpdump.org/linktypes/LINKTYPE_LINUX_SLL.html */
+struct sniff_sll {
+    uint16_t        packet_type;
+    uint16_t        arphrd_type;
+    uint16_t        link_address_length;
+    uint8_t         link_address[SLL_ADDR_LEN];
+    uint16_t        protocol_type;      /* IP? ARP? RARP? etc */
 };
 
 /* IPv6 header. RFC 2460, section3. Reading /usr/include/netinet/ip6.h is
