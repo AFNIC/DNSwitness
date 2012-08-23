@@ -25,7 +25,7 @@ write_delay = 2 # seconds
 timelimit = 300
 
 def module_usage(msg=None):
-    print >>sys.stderr, "Usage of this Zonecheck module: [-b database_name] [-n N] [-p zonecheck_prfile_file] [-t N]"
+    print >>sys.stderr, "Usage of this Zonecheck module: [-b database_name] [-n N] [-p zonecheck_prfile_file] [-v zonecheck_verbosity] [-t N]"
     if msg is not None:
         print >>sys.stderr, msg
 
@@ -57,9 +57,10 @@ class Plugin(BasePlugin.Plugin):
 
     def query(self, zone, nameservers):
         """ MUST NOT raise an exception!!!"""
-        global writers, profile, timelimit
+        global writers, profile, verbose, timelimit
         result = ZonecheckResult()
         result.domain = zone
+	verbose_option = '--verbose=' + verbose
         # TODO: the name servers
         result.writer = random.choice(writers)
         over = False
@@ -68,7 +69,7 @@ class Plugin(BasePlugin.Plugin):
             if timelimit is not None:
                 try:
                     zonecheck = subprocess.Popen(["timelimit", "-t", str(timelimit), "-T", str(timelimit/10 + 1),
-                                              "zonecheck", "--profile", profile, zone],
+                                              "zonecheck", "--profile", profile, verbose_option, zone],
                            shell=False,
                            stdout=subprocess.PIPE,
                            stderr=subprocess.PIPE)
@@ -78,7 +79,7 @@ class Plugin(BasePlugin.Plugin):
                     return result
             else:
                 try:
-                    zonecheck = subprocess.Popen(["zonecheck", "--profile", profile, zone],
+                    zonecheck = subprocess.Popen(["zonecheck", "--profile", profile, verbose_option, zone],
                            shell=False,
                            stdout=subprocess.PIPE,
                            stderr=subprocess.PIPE)
@@ -117,13 +118,14 @@ class Plugin(BasePlugin.Plugin):
 
 def config(args, zonefile, sampling):
     """ Receive the command-line arguments as an array """
-    global database, num_writing_tasks, zonefilename, samplingrate, profile, timelimit
+    global database, num_writing_tasks, zonefilename, samplingrate, profile, verbose, timelimit
     resolvers = None
     profile = None
+    verbose = '-i,x,d,f'
     try:
-        optlist, args = getopt.getopt (args, "hn:b:p:t:",
+        optlist, args = getopt.getopt (args, "hn:b:p:v:t:",
                                        ["help", "num_tasks=", "database=", 
-                                        "profile=", "timelimit="])
+                                        "profile=", "verbose=", "timelimit="])
         for option, value in optlist:
             if option == "--help" or option == "-h":
                 module_usage()
@@ -136,6 +138,8 @@ def config(args, zonefile, sampling):
                     timelimit = None
             elif option == "--profile" or option == "-p":
                 profile = value
+            elif option == "--verbose" or option == "-v":
+                verbose = value
             elif option == "--database" or option == "-b":
                 database = value
                 if database.find('=') == -1:
