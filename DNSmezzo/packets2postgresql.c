@@ -399,6 +399,7 @@ main(int argc, char *argv[])
         fatal("Cannot malloc %i bytes for the COPY input buffer", BUFFER_SIZE);
     }
     bufptr = buffer;
+	if (! dry_run) {
     PQclear(result);
     result = PQexecPrepared(conn, PREPARED_PACKET_STMT, 0, NULL, NULL, NULL, 0);
     if (PQresultStatus(result) == PGRES_COPY_IN) {
@@ -407,7 +408,7 @@ main(int argc, char *argv[])
         fatal("Result for '%s' is %s", SQL_PACKET_COMMAND,
               PQresultErrorMessage(result));
     }
-
+	}
     // read TLDs only once at daemon startup
     tldnode* tree = readTldTree(tldString);
 

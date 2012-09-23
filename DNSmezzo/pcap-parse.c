@@ -56,7 +56,8 @@ pcap_file_open(char *filename)
     thefile->packetnum = 0;
     thefile->dnspacketnum = 0;
     if (stat(filename, &result) != 0) {
-	  fatal("File %s does not exist or is not accessible: %s", filename, strerror(errno));
+        fatal("File %s does not exist or is not accessible: %s", filename,
+              strerror(errno));
     }
     thefile->size = result.st_size;
     thefile->creation = result.st_ctime;
@@ -92,7 +93,8 @@ get_next_packet(struct dns_packet *decoded, pcap_parser_file * input)
     const uint8_t  *packet;     /* The actual packet */
     struct pcap_pkthdr header;  /* The header that pcap gives us */
     const struct sniff_ethernet *ethernet;      /* The ethernet header */
-    unsigned short ethertype;
+    const struct sniff_sll *sll_link;   /* The SLL header */
+    unsigned short  ethertype;
     const struct sniff_ipv4 *ipv4;      /* The IP header */
     const struct sniff_ipv6 *ipv6;
     const struct sniff_udp *udp;        /* The UDP header */
@@ -135,12 +137,12 @@ get_next_packet(struct dns_packet *decoded, pcap_parser_file * input)
     if (input->datalink == DLT_EN10MB) {
         size_layer2 = SIZE_ETHERNET;
         ethernet = (struct sniff_ethernet *) (packet);
-	ethertype = ntohs(ethernet->ether_type);
-	if (ethertype == VLAN_ETHERTYPE) {
-	    packet += 4;
-	    ethernet = (struct sniff_ethernet *) (packet);
-	    ethertype = ntohs(ethernet->ether_type);
-	}
+        ethertype = ntohs(ethernet->ether_type);
+        if (ethertype == VLAN_ETHERTYPE) {
+            packet += 4;
+            ethernet = (struct sniff_ethernet *) (packet);
+            ethertype = ntohs(ethernet->ether_type);
+        }
         if (ethertype == IPv6_ETHERTYPE) {
             ip_version = 6;
         } else if (ethertype == IPv4_ETHERTYPE) {
@@ -148,14 +150,28 @@ get_next_packet(struct dns_packet *decoded, pcap_parser_file * input)
         } else {                /* Ignore other Ethernet types */
             goto next_packet;
         }
-    } else if (input->datalink == DLT_LOOP) {
+    } else if (input->datalink == DLT_LOOP) {   /* No Ethernet type for this data
+                                                 * link */
         size_layer2 = SIZE_LOOP;
-        family = (ntohl(*((uint32_t *) packet)));
+        family = (ntohl(*((uint32_t *) packet)));       /* TODO seems broken.
+                                                         * Untested */
         if (family == PF_INET6) {
             ip_version = 6;
         } else if (family == PF_INET) {
             ip_version = 4;
         } else {                /* Ignore other packet types */
+            goto next_packet;
+        }
+    } else if (input->datalink == DLT_LINUX_SLL) {      /* http://www.tcpdump.org/linktypes/LINKTYPE_LINUX_SLL.html 
+                                                         */
+        size_layer2 = SIZE_SLL;
+        sll_link = (struct sniff_sll *) (packet);
+        ethertype = ntohs(sll_link->protocol_type);
+        if (ethertype == IPv6_ETHERTYPE) {
+            ip_version = 6;
+        } else if (ethertype == IPv4_ETHERTYPE) {
+            ip_version = 4;
+        } else {                /* Ignore other Ethernet types */
             goto next_packet;
         }
     } else {
@@ -187,10 +203,9 @@ get_next_packet(struct dns_packet *decoded, pcap_parser_file * input)
                 next_v6_header = frag->frag_next;
                 size_header = SIZE_FRAGMENT_HDR;
             } else {
-			  /* TODO: RFC 6564 says that the *future* headers will
-				 have the same format as Destination Options, with a
-				 length field, so we may be able to jump them even
-				 without knowledge of their content. */
+                /* TODO: RFC 6564 says that the *future* headers will have the same
+                 * format as Destination Options, with a length field, so we may be
+                 * able to jump them even without knowledge of their content. */
                 end_of_headers = true;
             }
             where_am_i = where_am_i + size_header;
@@ -368,10 +383,9 @@ get_next_packet(struct dns_packet *decoded, pcap_parser_file * input)
                                     DNS_DO_DNSSEC(zpart) ? true : false;
                             }
                             sectionptr += 2;
-			    /* TODO: dissect the RDATA to find things
-			       like the option code (such as 3 for
-			       NSID)
-			       http://www.iana.org/assignments/dns-parameters */
+                            /* TODO: dissect the RDATA to find things like the
+                             * option code (such as 3 for NSID)
+                             * http://www.iana.org/assignments/dns-parameters */
                         }
                     }
                 }
