@@ -4,7 +4,7 @@ use DBI;
 
 
 my $database = 'dbi:Pg:dbname=' . 'dnsdelve-ip';
-my $user     = 'dnswitness';
+my $user     = 'dnsdelve';
 
 my %Stats = ();
 
