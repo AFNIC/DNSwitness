@@ -262,22 +262,24 @@ CREATE VIEW V6_enabled AS SELECT b.uuid, z.* FROM Broker b, Zones z WHERE
        AND b.zone = z.id;
 
 CREATE VIEW V6_full AS SELECT b.uuid, z.* FROM Broker b, Zones z WHERE
-            b.id IN (SELECT DISTINCT broker FROM Tests_zone WHERE ip IN (SELECT id FROM Ip WHERE family(address) = '6'))
-       AND
             b.id IN (SELECT DISTINCT broker FROM Tests_ns_zone WHERE ip IN (SELECT id FROM Ip WHERE family(address) = '6'))
        AND
             b.id IN (SELECT DISTINCT broker FROM Tests_mx_zone WHERE ip IN (SELECT id FROM Ip WHERE family(address) = '6'))
        AND
             b.id IN ((SELECT DISTINCT broker FROM Tests_www_zone WHERE ip IN (SELECT id FROM Ip WHERE family(address) = '6'))
             UNION
-            (SELECT DISTINCT broker FROM Tests_www_ipv6_zone WHERE ip IN (SELECT id FROM Ip WHERE family(address) = '6')))
+            (SELECT DISTINCT broker FROM Tests_www_ipv6_zone WHERE ip IN (SELECT id FROM Ip WHERE family(address) = '6'))
+            UNION
+            (SELECT DISTINCT broker FROM Tests_zone WHERE ip IN (SELECT id FROM Ip WHERE family(address) = '6')))
        AND
             b.zone = z.id;
 
 CREATE VIEW V6_Web AS SELECT b.uuid, z.* FROM Broker b, Zones z WHERE
        b.id IN ((SELECT DISTINCT broker FROM Tests_www_zone WHERE ip IN (SELECT id FROM Ip WHERE family(address) = '6'))
        UNION
-       (SELECT DISTINCT broker FROM Tests_www_ipv6_zone WHERE ip IN (SELECT id FROM Ip WHERE family(address) = '6')))
+       (SELECT DISTINCT broker FROM Tests_www_ipv6_zone WHERE ip IN (SELECT id FROM Ip WHERE family(address) = '6'))
+       UNION
+       (SELECT DISTINCT broker FROM Tests_zone WHERE ip IN (SELECT id FROM Ip WHERE family(address) = '6')))
        AND b.zone = z.id;
 
 CREATE VIEW V6_DNS AS SELECT b.uuid, z.* FROM Broker b, Zones z WHERE
