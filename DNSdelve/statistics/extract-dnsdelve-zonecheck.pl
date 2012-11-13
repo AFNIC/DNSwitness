@@ -68,7 +68,7 @@ MAIN: {
 	}
 	if ( exists $opts{'one_month'} ) {
 		$opts{'one_month'} =~ m!^(\d{4})\-?(\d{2})$!;
-		$opts{'one_month'} = "$0-$1";
+		$opts{'one_month'} = "$1-$2";
 	}
 
 	print Dumper(%opts) if ( $opts{'debug'} >= 2); 
