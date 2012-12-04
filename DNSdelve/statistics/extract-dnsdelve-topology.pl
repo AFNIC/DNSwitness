@@ -211,7 +211,7 @@ sub usage {
 	print "\n Error: $message \n\n" if ($message);
 
 	print "usage: $Name [--help|-h] [--debug|-d <debug-level>] [--all_runs|-a] [--one_month|-m <YYYY-MM>] [--one_run|-r <uuid or date>] \n";
-	print "             [--output|-o <output-file>] \n";
+	print "             [--full|-f] [--output|-o <output-file>] \n";
 
 }
 
