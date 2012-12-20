@@ -3,7 +3,7 @@
 use strict;
 
 use DBI;
-use Getopt::Std;
+use Getopt::Long;
 
 my $debug = 2;
 
@@ -20,35 +20,48 @@ my $probe_reg = 'mezzo\-dns\.(.*)\-dns\-SAMPLING';
 my %opts;
 my $reason;
  
-getopts('t:p:s:d:', \%opts);  
 
-if ( exists $opts{'d'} ) { 
-	$debug = $opts{'d'}; 
-} else {
-	$debug = 0;
+
+GetOptions(\%opts, "help|h", "debug|d:i", "start|t:s", "stop|p:s", "all_probes|a", "probe|s:s" );
+
+if ( exists $opts{'help'} ) {
+	usage();
+	die(0);
 }
 
-if ( exists $opts{'t'} ) {   
-	unless ( $opts{'t'} =~ m!^\d{4}\-\d{2}$! ){
+if ( exists $opts{'all_probes'} and exists $opts{'probe'} ) {
+	$reason = q{options 'all_probes' and 'probe' are exclusive};
+	usage();
+	die($reason);
+}
+
+if ( exists $opts{'debug'} ) { 
+	$debug = $opts{'debug'}; 
+} else {
+	$debug = 2;
+}
+
+if ( exists $opts{'start'} ) {   
+	unless ( $opts{'start'} =~ m!^\d{4}\-\d{2}$! ){
 		$reason = "start time format must be YYYY-MM";
 		usage();
 		die($reason);
 	} 
 } else {
-	$opts{'t'} = Default_Start();
+	$opts{'start'} = Default_Start();
 }
 
-if ( exists $opts{'p'} ) {
-	unless ( $opts{'p'} =~ m!^\d{4}\-\d{2}$! ){
+if ( exists $opts{'stop'} ) {
+	unless ( $opts{'stop'} =~ m!^\d{4}\-\d{2}$! ){
 		$reason = "stop time format must be YYYY-MM";
 		usage();
 		die($reason);
 	} 
 } else {
-	$opts{'p'} = Default_Stop();
+	$opts{'stop'} = Default_Stop();
 }
 
-if ( exists $opts{'s'} ) {
+if ( exists $opts{'probe'} ) {
 	$opts{'all_probes'} = 0;	
 } else {
 	$opts{'all_probes'} = 1;	
@@ -72,13 +85,13 @@ my $dbh = DBI->connect($database, $user ) or die "cannot open $database $DBI::er
 ## Get dns_packets tables from pcap_files table
 #############
 
-my $start_date = $opts{'t'} . '-01';
-my $stop_date  = $opts{'p'} . '-01';
+my $start_date = $opts{'start'} . '-01';
+my $stop_date  = $opts{'stop'} . '-01';
 
 my $probe_filter = '';
 
 if ( $opts{'all_probes'} == 0 ) {
-	$probe_filter = qq{ and filename like '%dns.$opts{"s"}' };
+	$probe_filter = qq{ and filename like '%dns.$opts{"probe"}' };
 }
 
 my $sql = qq{ 
@@ -133,7 +146,7 @@ $dbh->disconnect();
 sub usage {
 
 	print qq {
-usage :  get_ipv6_dnsmezzo.pl [-t start_month] [-p stop_month] [-s probe]  
+usage :  get_ipv6_dnsmezzo.pl [--start|-t start_month] [--stop|-p stop_month] [--probe|-s probe] [--all_probes|-a]
    where start_month, stop_month formats are YYYY-MM
    and probe in ('bru', 'th2', 'lyn1', 'fra' ...)
 
@@ -145,6 +158,8 @@ usage :  get_ipv6_dnsmezzo.pl [-t start_month] [-p stop_month] [-s probe]
 ######################
 
 sub Default_Start {
+
+	## If today is 2012-12-06 ==> Default_Start = 2011-01
 
 	my ($mon, $year) = (localtime(time))[4,5];
 	$year += 1900;
@@ -165,10 +180,17 @@ sub Default_Start {
 
 sub Default_Stop {
 
+	## If today is 2012-12-06 ==> Default_Start = 2013-01
+
 	my ($mon, $year) = (localtime(time))[4,5];
 	$year += 1900;
 	$mon += 1;  # normal reformatting
+
 	$mon += 1;	# we'll stop at the end of the current month (so 1st day of next month)
+	if ( $mon == 13 ) {
+		$mon = 1;
+		$year += 1;
+	}
 	return sprintf ("%d-%02d", $year, $mon);
 }
 
