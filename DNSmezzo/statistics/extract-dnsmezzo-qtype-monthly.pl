@@ -26,7 +26,7 @@ GetOptions(\%opts, "help|h", "debug|d:i", "start|t:s", "stop|p:s", "all_probes|a
 
 if ( exists $opts{'help'} ) {
 	usage();
-	die(0);
+	exit(0);
 }
 
 if ( exists $opts{'all_probes'} and exists $opts{'probe'} ) {
@@ -146,8 +146,8 @@ $dbh->disconnect();
 sub usage {
 
 	print qq {
-usage :  get_ipv6_dnsmezzo.pl [--start|-t start_month] [--stop|-p stop_month] [--probe|-s probe] [--all_probes|-a]
-   where start_month, stop_month formats are YYYY-MM
+usage :  extract-dnsmezzo-qtype-monthly.pl [--start|-t start_month] [--stop|-p stop_month] [--probe|-s probe] [--all_probes|-a]
+   where start_month, stop_month formats are YYYY-MM  -- stats will be gathered for the period [start_month .. stop_month[
    and probe in ('bru', 'th2', 'lyn1', 'fra' ...)
 
 };
