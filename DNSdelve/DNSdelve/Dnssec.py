@@ -98,6 +98,10 @@ class Plugin(BasePlugin.Plugin):
                 try:
                     nsec_result = myresolver.query (zone, 'NSEC')
                 except dns.resolver.NoAnswer:
+                    # TODO BUG: this test is *wrong*. The NSEC3 record is
+                    # not at the apex and is returned in the Authority
+                    # section. So, this test fails to report the NSEC3
+                    # zones.
                     nsec_result = myresolver.query (zone, 50) # Resource record type 50 is NSEC3,
                     # not yet known by dnspython
             except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN):
