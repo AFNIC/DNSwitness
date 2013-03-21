@@ -60,8 +60,8 @@ class Plugin(BasePlugin.Plugin):
         global writers, profile, verbose, erroropt, timelimit
         result = ZonecheckResult()
         result.domain = zone
-		verbose_option = '--verbose=' + verbose
-		error_option   = '--error=' + erroropt
+        verbose_option = '--verbose=' + verbose
+        error_option   = '--error=' + erroropt
         # TODO: the name servers
         result.writer = random.choice(writers)
         over = False
@@ -123,7 +123,7 @@ def config(args, zonefile, sampling):
     resolvers = None
     profile = None
     verbose = '-i,x,d,f'
-	erroropt = 'ds,ns'
+    erroropt = 'ds,ns'
     try:
         optlist, args = getopt.getopt (args, "hn:b:p:v:t:",
                                        ["help", "num_tasks=", "database=", 
