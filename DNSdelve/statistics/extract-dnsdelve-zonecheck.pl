@@ -20,7 +20,8 @@ our %opts;
 our %Stats;
 our %MonthlyStats;
 our %ErrorTypes;
-use constant MAX_NB_FREQUENT_ERRORS => 10;
+use constant MAX_NB_FREQUENT_ERRORS => 5000;
+use constant MAX_NB_PROVIDERS => 10;
 
 MAIN: {
 
@@ -31,7 +32,7 @@ MAIN: {
 	my $msg;
 
 
-	GetOptions(\%opts, "help|h", "debug|d:i", "all_runs|a", "one_run|r:s", "one_month|m:s", "output|o:s", "full|f", "month_average|g");
+	GetOptions(\%opts, "help|h", "debug|d:i", "all_runs|a", "one_run|r:s", "one_month|m:s", "multiple_errors|e", "output|o:s", "full|f", "month_average|g");
 
 	if ( $opts{'help'} ) {
 		usage();
@@ -68,7 +69,7 @@ MAIN: {
 	}
 	if ( exists $opts{'one_month'} ) {
 		$opts{'one_month'} =~ m!^(\d{4})\-?(\d{2})$!;
-		$opts{'one_month'} = "$1-$2";
+		$opts{'one_month'} = "$0-$1";
 	}
 
 	print Dumper(%opts) if ( $opts{'debug'} >= 2); 
@@ -126,31 +127,37 @@ MAIN: {
 		$fh = \*STDOUT;
 	}
 
-	print $fh "####--------------------------------------------------\n";
-	print $fh "# Mois     - Taux tests ZC positifs - Taux tests ZC negatifs \n";
-	print $fh "####--------------------------------------------------\n";
+	print $fh "####---------------------------------------------------------------------------------\n";
+	print $fh "#     Mois - Taux tests ZC positifs - Taux tests ZC negatifs - Nb domaines examines (Nb moyen de domaines examines par run)\n";
+	print $fh "####----------------------------------------------------------------------------------\n\n";
+
+	my ($ct, $cf, $cn, $ca);
+	my ($date);
 
 	if ( $opts{'month_average'} ) {
 
-		my ($ct, $cf);
 		my @months = sort { $a cmp $b } ( keys %MonthlyStats );
 		foreach my $month ( @months ) {
 
 			$ct = ( $MonthlyStats{$month}{'true'} / $MonthlyStats{$month}{'count'} ) * 100;
 			$cf = ( $MonthlyStats{$month}{'false'} / $MonthlyStats{$month}{'count'} ) * 100;
+			$cn = $MonthlyStats{$month}{'nb_domains'};
+			$ca = $MonthlyStats{$month}{'nb_domains'} / $MonthlyStats{$month}{'count'} ;
 
-			printf $fh "%s ; %02.2f ; %02.2f \n", $month, $ct, $cf;
+			printf $fh "%-15s ---   %02.2f%s   ---   %02.2f%s    ---   %d (%d)\n", $month, $ct,'%', $cf, '%',$cn, $ca;
 		}
 
 	} else {
 
-		my ($date);
 		my @uuids = sort { $Stats{$a}{'date'} cmp $Stats{$b}{'date'} } ( keys %Stats );
 		foreach my $uuid ( @uuids ) {
 		
 			$Stats{$uuid}{'date'} =~ m!^(.*)\..*$! ;		
-			$date =  $1 ;		
-			printf $fh "%s  ; %02.2f ; %02.2f \n", $date, $Stats{$uuid}{'true'} * 100 , $Stats{$uuid}{'false'} * 100 ;
+			$date =  $1 ;	
+			$ct   = $Stats{$uuid}{'true'} * 100;
+			$cf   = $Stats{$uuid}{'false'} * 100;
+			$cn   = $Stats{$uuid}{'nb_domains'};
+			printf $fh "%-15s ---   %02.2f%s   ---   %02.2f%s   ---   %d (-)\n", $date, $ct , '%', $cf, '%', $cn;
 		}
 
 	}
@@ -162,7 +169,6 @@ MAIN: {
 	if ( $opts{'full'} ) {
 
 		my @months = sort { $a cmp $b } ( keys %ErrorTypes );
-		my ($cf);
 
 		print $fh "\n\n####--------------------------------------------------\n";
 		print $fh "#Erreurs les plus frequentes \n";
@@ -174,10 +180,11 @@ MAIN: {
 			print $fh "#----------------------------\n";
 
 			my @frqs = sort { $ErrorTypes{$month}{'errors'}{$b} <=> $ErrorTypes{$month}{'errors'}{$a} } (keys $ErrorTypes{$month}{'errors'} );
-			$cf = $MonthlyStats{$month}{'raw_false'} ;
+			#$cf = $MonthlyStats{$month}{'nbt_errors'} ;
+			$cf = $ErrorTypes{$month}{'nbt_errors'};
 
 			for ( my $i =0; $i < scalar(@frqs) and $i < MAX_NB_FREQUENT_ERRORS - 1 ; $i++) {
-				printf "%-60s : %02.2f \n", $frqs[$i], ( $ErrorTypes{$month}{'errors'}{$frqs[$i]} / $cf ) * 100;
+				printf $fh "%-60s : %02.2f \n", $frqs[$i], ( $ErrorTypes{$month}{'errors'}{$frqs[$i]} / $cf ) * 100;
 			}
 
 		}
@@ -194,8 +201,8 @@ MAIN: {
 			my @frqs = sort { $ErrorTypes{$month}{'providers'}{$b} <=> $ErrorTypes{$month}{'providers'}{$a} } (keys $ErrorTypes{$month}{'providers'} );
 			$cf = $MonthlyStats{$month}{'raw_false'} ;
 
-			for ( my $i =0; $i < scalar(@frqs) and $i < MAX_NB_FREQUENT_ERRORS - 1 ; $i++) {
-				printf "%-25s : %02.2f \n", $frqs[$i], ( $ErrorTypes{$month}{'providers'}{$frqs[$i]} / $cf ) * 100;
+			for ( my $i =0; $i < scalar(@frqs) and $i < MAX_NB_PROVIDERS - 1 ; $i++) {
+				printf $fh "%-25s : %02.2f \n", $frqs[$i], ( $ErrorTypes{$month}{'providers'}{$frqs[$i]} / $cf ) * 100;
 			}
 		}
 	}
@@ -219,7 +226,7 @@ sub usage {
 	print "\n Error: $message \n\n" if ($message);
 
 	print "usage: $Name [--help|-h] [--debug|-d <debug-level>] [--all_runs|-a] [--one_month|-m <YYYY-MM>] [--one_run|-r <uuid or date>] \n";
-	print "             [--month_average|-g] [--full|-f] [--output|-o <output-file>] \n";
+	print "             [--multiple_errors|e] [--month_average|-g] [--full|-f] [--output|-o <output-file>] \n";
 
 }
 
@@ -261,11 +268,13 @@ sub MonthAverages {
 			$current_month = $month;
 			$MonthlyStats{$current_month}{'true'}   = 0;
 			$MonthlyStats{$current_month}{'false'}  = 0;
-			$MonthlyStats{$current_month}{'count'}  = 0;
+			$MonthlyStats{$current_month}{'nb_domains'}  = 0;
+			$MonthlyStats{$current_month}{'count'}       = 0;
 		}
-		$MonthlyStats{$current_month}{'true'}  += $Stats{$uuid}{'true'};
-		$MonthlyStats{$current_month}{'false'} += $Stats{$uuid}{'false'};
+		$MonthlyStats{$current_month}{'true'}  += $Stats{$uuid}{'true'};     # proportion of domains with status ='t'!
+		$MonthlyStats{$current_month}{'false'} += $Stats{$uuid}{'false'};	 # proportion of domains with status ='f' !
 		$MonthlyStats{$current_month}{'raw_false'} += $Stats{$uuid}{'raw_false'};
+		$MonthlyStats{$current_month}{'nb_domains'} += $Stats{$uuid}{'nb_domains'};
 		$MonthlyStats{$current_month}{'count'} += 1;
 
 		print "MonthAverages : $current_month - T : $MonthlyStats{$current_month}{'true'} - F : $MonthlyStats{$current_month}{'false'} \n" if ( $opts{'debug'} >= 3 );
@@ -308,9 +317,10 @@ sub GetStats {
 	foreach my $uuid (keys %{$href_runs} ) {
 		@res = GetStatsByRun($uuid);
 		$Stats{$uuid}{'date'}  = $href_runs->{$uuid}{'date'};
-		$Stats{$uuid}{'true'}  = $res[0] / ( $res[0] + $res[1] );
-		$Stats{$uuid}{'false'} = $res[1] / ( $res[0] + $res[1] );
-		$Stats{$uuid}{'raw_false'} = $res[1] ;
+		$Stats{$uuid}{'true'}  = $res[0] / ( $res[0] + $res[1] );   # proportion of domains with status='t'
+		$Stats{$uuid}{'false'} = $res[1] / ( $res[0] + $res[1] );   # proportion of domains with status='f' 
+		$Stats{$uuid}{'raw_false'}  = $res[1] ;					    # total number of domains with status='f'
+		$Stats{$uuid}{'nb_domains'} = $res[0] + $res[1] ;		    # total number of domains tested in the run
 	}
 
 
@@ -455,7 +465,7 @@ sub GetandTrimErrors {
 	my $month = $Stats{$uuid}{'date'};
 	$month =~ s!^(\d{4}\-\d{2}).*$!$1!;
 
-	my ($domain, $message, $type, $provider);
+	my ($domain, $message, @types, @providers, $type, $provider);
 
 	my $sql = qq{ select domain, message from tests where status='f' and uuid='$uuid' };
 	my $sth = $dbh->prepare($sql);
@@ -463,27 +473,47 @@ sub GetandTrimErrors {
 
 	while ( ($domain, $message) = $sth->fetchrow_array() ) {
 
-		($type, $provider) = GetErrorType($domain, $message);
+		@types     = ();
+		@providers = ();
 
-		$ErrorTypes{$month}{'errors'}{$type}        += 1;
-		$ErrorTypes{$month}{'providers'}{$provider} += 1; 
+		if ( $opts{'multiple_errors'} ) {
+			GetErrorTypeMul($domain, $message, \@types, \@providers);
+		} else {
+			GetErrorType($domain, $message, \@types, \@providers);
+		}
+
+		printf "$uuid - Nb errors = %d - Nb providers = %d \n", scalar(@types), scalar(@providers) if ($opts{'debug'} >= 3);
+
+		foreach $type ( @types ) {	
+			$ErrorTypes{$month}{'errors'}{$type}        += 1;		# The same error type can be counted multiple times by domain
+			$ErrorTypes{$month}{'nbt_errors'}           += 1;		# Total number of errors for one month 
+			printf "$uuid - %-40s - %s \n", $domain, $type if ($opts{'debug'} >= 3);
+		}
+		foreach $provider ( @providers ) {	
+			$ErrorTypes{$month}{'providers'}{$provider} += 1;      # A particular provider is counted only once by domain
+			printf "$uuid - %-40s - %-15s \n", $domain, $provider if ($opts{'debug'} >= 3);
+		}
 	
-		printf "$uuid - %-40s - %-15s - %s \n", $domain, $provider, $type if ($opts{'debug'} >= 3);
 	}
 	
 
 }
 
 ####---------------------------------------------
-#### ($type, $provider) = GetErrorType($message, $domain)
+#### GetErrorType($message, $domain, $ref_type, $ref_provider)
 ####
 #### Parse $message and find error type and DNS provider
 #### that caused Zonecheck error
+#### 
+#### Results are stored into the 2 ref. to arrays 
+#### $ref_type and $ref_provider
 ####---------------------------------------------
 sub GetErrorType {
 
-	my $domain = shift;
-	my $message = shift;
+	my $domain       = shift;
+	my $message      = shift;
+	my $ref_type     = shift;
+	my $ref_provider = shift;
 
 	my $type     = 'undefined';
 	my $provider = 'undefined';
@@ -531,6 +561,84 @@ sub GetErrorType {
 		$type = $message;
 	}
 
-	return ($type, $provider);
+	#return ($type, $provider);
+	$ref_type->[0]     = $type;
+	$ref_provider->[0] = $provider;
 }
 
+
+
+####---------------------------------------------
+#### ($type, $provider) = GetErrorTypeMul($message, $domain)
+####
+#### Parse $message and find multiple error types and DNS provider
+#### that caused Zonecheck error
+#### 
+#### Results are stored into the 2 ref. to arrays 
+#### $ref_type and $ref_provider
+####
+#### Notice : a provider will be counted 1 for each 
+#### erronuous domain. Hence, if a provider has 2 erronous
+#### domains with 1 error each, it will appear as making 
+#### more errors than a provider that will have 10 errors 
+#### on only one domain.
+####---------------------------------------------
+sub GetErrorTypeMul {
+
+	my $domain = shift;
+	my $message = shift;
+	my $ref_type     = shift;
+	my $ref_provider = shift;
+
+	my $type     = 'undefined';
+	my $provider = 'undefined';
+	my %seen     = {};
+
+	## Lines like 'ns2.lwsdns.com/193.37.145.22' give $provider
+	## Lines like 'ns2.lwsdns.com'               give $provider
+	## my $dns_line_fmt = '([a-zA-z0-9\-]\.)*[a-zA-z0-9\-]\/([0-9]*[\.:])*[0-9]';
+	my $dns_line_fmt = '^=> (([a-zA-z0-9\-]*\.)*)([a-zA-z0-9\-]*)(\/(([0-9A-F]*[\.:])*)([0-9A-F]*))?\s*$';
+
+	my @lines;
+
+	@lines = split /\n/, $message;
+
+	print "======================================\n" if ($opts{'debug'} >= 4);
+	print "FilterError - D50 - $domain \n" if ($opts{'debug'} >= 4);
+
+	for (my $i=1; $i < scalar(@lines); $i++) {
+
+		unless ( ($lines[$i] =~ m!^f> !) or ($lines[$i] =~ m!^=> !)) {
+			next;
+		}
+
+		print "FilterError - D52 - $lines[$i] \n" if ($opts{'debug'} >= 4);
+
+		## Lines like 'ns2.lwsdns.com/193.37.145.22' give $provider
+		if ( $lines[$i] =~ m!$dns_line_fmt! ) {
+			$provider = $lines[$i];
+			$provider =~ s!^=>(.*)$!$1!;     # remove leading '=>'
+			$provider =~ s!^(.*)\/.*$!$1!;   # remove IP address
+			$provider =~ s!^[^\.]*\.!!;      # remove first label
+			unless ( $seen{$provider} or ($provider =~ m!^\s*generic\s*$! )) {   #Count a provider only once by domain ! 
+				$seen{$provider} = 1;
+				push (@$ref_provider, $provider);
+				printf "FilterErrorP :  %-40s - %-15s \n", $domain, $provider if ($opts{'debug'} >= 4);
+			}
+			
+		} else {
+			$type = $lines[$i];
+			$type =~ s!^f>(.*)$!$1!;      			# remove leading 'f>'
+			$type =~ s!^=>(.*)$!$1!;      			# remove leading '=>'
+			$type =~ s!^\s*!!; $type =~ s!\s*$!!;  	#remove leading/trailing blanks
+			unless ( $type =~ m!^\[.*\]! ) {	 	# errors like '[....]' are tests that couldn't be completed for some reason
+				push(@$ref_type, $type);
+			}
+			printf "FilterErrorT :  %-40s - $type\n", $domain if ($opts{'debug'} >= 4);
+		}
+
+	}
+
+
+
+}
