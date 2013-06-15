@@ -45,6 +45,7 @@ CREATE TABLE DNS_Packets (id SERIAL UNIQUE NOT NULL,
        qtype INTEGER  NOT NULL, -- With helper functions TODO to translate numeric values to well-known text like AAAA, MX, etc
        edns0_size INTEGER, -- NULL if no EDNS0
        do_dnssec BOOLEAN, -- NULL if no EDNS0
+       edns_options INTEGER[], -- NULL if no EDNS0
        ancount INTEGER  NOT NULL,
        nscount INTEGER  NOT NULL,
        arcount INTEGER  NOT NULL,
