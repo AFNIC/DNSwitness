@@ -108,6 +108,9 @@ get_next_packet(struct dns_packet *decoded, pcap_parser_file * input)
     uint16_t        edns_size;
     uint16_t        extended_rcode_and_version;
     uint16_t        zpart;
+    uint            num_edns_options = 0;
+    uint16_t        opt_len, option_code, option_length;
+    uint16_t        option_codes[MAX_EDNS_OPTIONS];
     const uint8_t  *sectionptr;
     const uint8_t  *where_am_i; /* Cursor in packet */
     bool            end_of_name;
@@ -382,9 +385,36 @@ get_next_packet(struct dns_packet *decoded, pcap_parser_file * input)
                                     DNS_DO_DNSSEC(zpart) ? true : false;
                             }
                             sectionptr += 2;
-                            /* TODO: dissect the RDATA to find things like the
-                             * option code (such as 3 for NSID)
-                             * http://www.iana.org/assignments/dns-parameters */
+                            CHECK_SECTIONPTR(2);
+#ifdef PICKY_WITH_ALIGNMENT
+                            opt_len = unaligned_uint16(sectionptr);
+#else
+                            opt_len = ntohs(*((uint16_t *) sectionptr));
+#endif
+                            sectionptr += 2;
+                            while (opt_len > 0
+                                   && num_edns_options < MAX_EDNS_OPTIONS) {
+                                CHECK_SECTIONPTR(2);
+#ifdef PICKY_WITH_ALIGNMENT
+                                option_code = unaligned_uint16(sectionptr);
+#else
+                                option_code = ntohs(*((uint16_t *) sectionptr));
+#endif
+                                option_codes[num_edns_options] = option_code;
+                                sectionptr += 2;
+                                CHECK_SECTIONPTR(2);
+#ifdef PICKY_WITH_ALIGNMENT
+                                option_length = unaligned_uint16(sectionptr);
+#else
+                                option_length = ntohs(*((uint16_t *) sectionptr));
+#endif
+                                opt_len -= (option_length + 4);
+                                num_edns_options++;
+                                sectionptr += option_length;
+                            }
+                            memcpy(decoded->edns_options, option_codes,
+                                   num_edns_options * sizeof(option_code));
+                            decoded->num_edns_options = num_edns_options;
                         }
                     }
                 }

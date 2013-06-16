@@ -95,7 +95,7 @@ escape(char *to, const char *from)
             to[j++] = 't';
             break;
         case 92:
-            if (from[i+1] == '.') {
+            if (from[i + 1] == '.') {
                 to[j++] = '.';
                 i++;
             }
@@ -116,34 +116,38 @@ escape(char *to, const char *from)
  * http://coding.debuntu.org/c-implementing-str_replace-replace-all-occurrences-substring
  * Licence: GPL v2+
  */
-char *
-str_replace ( const char *string, const char *substr, const char *replacement ){
-  char *tok = NULL;
-  char *newstr = NULL;
-  char *oldstr = NULL;
-  char *head = NULL;
- 
-  /* if either substr or replacement is NULL, duplicate string a let caller handle it */
-  if ( substr == NULL || replacement == NULL ) return strdup (string);
-  newstr = strdup (string);
-  head = newstr;
-  while ( (tok = strstr ( head, substr ))){
-    oldstr = newstr;
-    newstr = malloc ( strlen ( oldstr ) - strlen ( substr ) + strlen ( replacement ) + 1 );
-    /*failed to alloc mem, free old string and return NULL */
-    if ( newstr == NULL ){
-      free (oldstr);
-      return NULL;
+char           *
+str_replace(const char *string, const char *substr, const char *replacement)
+{
+    char           *tok = NULL;
+    char           *newstr = NULL;
+    char           *oldstr = NULL;
+    char           *head = NULL;
+
+    /* if either substr or replacement is NULL, duplicate string a let caller handle 
+     * it */
+    if (substr == NULL || replacement == NULL)
+        return strdup(string);
+    newstr = strdup(string);
+    head = newstr;
+    while ((tok = strstr(head, substr))) {
+        oldstr = newstr;
+        newstr = malloc(strlen(oldstr) - strlen(substr) + strlen(replacement) + 1);
+        /* failed to alloc mem, free old string and return NULL */
+        if (newstr == NULL) {
+            free(oldstr);
+            return NULL;
+        }
+        memcpy(newstr, oldstr, tok - oldstr);
+        memcpy(newstr + (tok - oldstr), replacement, strlen(replacement));
+        memcpy(newstr + (tok - oldstr) + strlen(replacement), tok + strlen(substr),
+               strlen(oldstr) - strlen(substr) - (tok - oldstr));
+        memset(newstr + strlen(oldstr) - strlen(substr) + strlen(replacement), 0, 1);
+        /* move back head right after the last replacement */
+        head = newstr + (tok - oldstr) + strlen(replacement);
+        free(oldstr);
     }
-    memcpy ( newstr, oldstr, tok - oldstr );
-    memcpy ( newstr + (tok - oldstr), replacement, strlen ( replacement ) );
-    memcpy ( newstr + (tok - oldstr) + strlen( replacement ), tok + strlen ( substr ), strlen ( oldstr ) - strlen ( substr ) - ( tok - oldstr ) );
-    memset ( newstr + strlen ( oldstr ) - strlen ( substr ) + strlen ( replacement ) , 0, 1 );
-    /* move back head right after the last replacement */
-    head = newstr + (tok - oldstr) + strlen( replacement );
-    free (oldstr);
-  }
-  return newstr;
+    return newstr;
 }
 
 #define METADATA_INT 1
@@ -192,7 +196,7 @@ get_metadata(name, key, type)
 
 #define SQL_PACKET_COMMAND "COPY DNS_Packets \
            (file, rank, date, length, src_address, dst_address, protocol, src_port, dst_port, \
-            query, query_id, opcode, rcode, aa, tc, rd, ra, qname, qtype, qclass, edns0_size, do_dnssec, \
+            query, query_id, opcode, rcode, aa, tc, rd, ra, qname, qtype, qclass, edns0_size, do_dnssec, edns_options, \
             ancount, nscount, arcount, registered_domain, lowercase_qname) FROM STDIN;"
 #define PREPARED_PACKET_STMT "copy-data"
 #define SQL_FILE_COMMAND "INSERT INTO Pcap_Files (hostname, filename, datalinktype, snaplength, filesize, filedate, stoppedat, samplingrate) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id;"
@@ -243,11 +247,13 @@ main(int argc, char *argv[])
     PGresult       *result;
     struct tm       file_creation, date_firstpacket, date_lastpacket;
     int            *sampling;
-    char           *buffer, *bufptr, *tmp, *tmp2, *tmp3;       /* SQL COPY input buffer */
+    char           *buffer, *bufptr, *tmp, *tmp2, *tmp3;        /* SQL COPY input
+                                                                 * buffer */
     unsigned long   copied;
     const char     *file_params[NUM_FILE_PARAMS];
     const char     *fileend_params[NUM_FILEEND_PARAMS];
     unsigned int    file_id = 0;
+    unsigned int    i;
 
     progname = argv[0];
     while ((ch = getopt(argc, argv, "nvm:c:p")) != -1) {
@@ -301,9 +307,9 @@ main(int argc, char *argv[])
             fatal(PQerrorMessage(conn));
         }
         /* We find lot of funny characters in domain names, not always UTF-8.
-         * Setting the client encoding to Latin-1 is arbitrary, but it is to
-         * be sure the program won't crash (because any string is valid 
-         * Latin-1, unlike UTF-8). */
+         * Setting the client encoding to Latin-1 is arbitrary, but it is to be sure 
+         * * the program won't crash (because any string is valid Latin-1, unlike
+         * UTF-8). */
         result = PQexec(conn, "SET CLIENT_ENCODING TO 'LATIN-1';");
         if (PQresultStatus(result) != PGRES_COMMAND_OK) {
             fatal("Cannot set encoding");
@@ -399,18 +405,18 @@ main(int argc, char *argv[])
         fatal("Cannot malloc %i bytes for the COPY input buffer", BUFFER_SIZE);
     }
     bufptr = buffer;
-	if (! dry_run) {
-    PQclear(result);
-    result = PQexecPrepared(conn, PREPARED_PACKET_STMT, 0, NULL, NULL, NULL, 0);
-    if (PQresultStatus(result) == PGRES_COPY_IN) {
-        /* OK */
-    } else {
-        fatal("Result for '%s' is %s", SQL_PACKET_COMMAND,
-              PQresultErrorMessage(result));
+    if (!dry_run) {
+        PQclear(result);
+        result = PQexecPrepared(conn, PREPARED_PACKET_STMT, 0, NULL, NULL, NULL, 0);
+        if (PQresultStatus(result) == PGRES_COPY_IN) {
+            /* OK */
+        } else {
+            fatal("Result for '%s' is %s", SQL_PACKET_COMMAND,
+                  PQresultErrorMessage(result));
+        }
     }
-	}
     // read TLDs only once at daemon startup
-    tldnode* tree = readTldTree(tldString);
+    tldnode        *tree = readTldTree(tldString);
 
     tmp = malloc(MAX_STRING);
     tmp2 = malloc(MAX_STRING);
@@ -499,9 +505,27 @@ main(int argc, char *argv[])
             bufptr += strlen(packet->do_dnssec ? "true" : "false");
             *bufptr = '\t';
             bufptr++;
+            if (packet->num_edns_options > 0) {
+                strcpy(bufptr, "{");
+                bufptr += strlen("{");
+                for (i = 0; i < packet->num_edns_options; i++) {
+                    sprintf(tmp, "%i", packet->edns_options[i]);
+                    strcpy(bufptr, tmp);
+                    bufptr += strlen(tmp);
+                    if (i < (packet->num_edns_options - 1)) {
+                        strcpy(bufptr, ",");
+                        bufptr++;
+                    }
+                }
+                strcpy(bufptr, "}\t");
+                bufptr += strlen("}\t");
+            } else {
+                strcpy(bufptr, "\\N\t");
+                bufptr += strlen("\\N\t");
+            }
         } else {
-            strcpy(bufptr, "\\N\t\\N\t");
-            bufptr += strlen("\\N\t\\N\t");
+            strcpy(bufptr, "\\N\t\\N\t\\N\t");
+            bufptr += strlen("\\N\t\\N\t\\N\t");
         }
         sprintf(tmp, "%i\t", packet->ancount);
         strcpy(bufptr, tmp);
@@ -518,7 +542,7 @@ main(int argc, char *argv[])
         } else {
             tmp3 = NULL;
         }
-        if (tmp3 == NULL) { /* this is already a TLD */
+        if (tmp3 == NULL) {     /* this is already a TLD */
             escape(tmp, tmp2);
         } else {
             escape(tmp, tmp3);
@@ -564,13 +588,17 @@ main(int argc, char *argv[])
         if (copied != 1) {
             fatal("Cannot end the data stream: %s", PQerrorMessage(conn));
         }
+        result = PQgetResult(conn);
+        if (result != NULL && strcmp(PQerrorMessage(conn), "") != 0) {
+            fatal("COPY of data failed: %s.", PQerrorMessage(conn));
+        }
     }
     if (verbose) {
         ct = current_time();
         fprintf(stdout, "%s Done, %lu DNS packets stored%s\n",
                 ct, packetnum, (maxpackets > 0
-                                            && packetnum >=
-                                            maxpackets) ?
+                                && packetnum >=
+                                maxpackets) ?
                 " - interrupted before the end because max packets read" : "");
         free(ct);
     }
@@ -619,7 +647,8 @@ main(int argc, char *argv[])
         result = PQexec(conn, tmp);
         free(tmp);
         if (PQresultStatus(result) != PGRES_COMMAND_OK) {
-            fatal("Error while creating the UNIQUE(id) constraint: %s", PQresultErrorMessage(result));
+            fatal("Error while creating the UNIQUE(id) constraint: %s",
+                  PQresultErrorMessage(result));
         }
         PQclear(result);
 
@@ -627,7 +656,8 @@ main(int argc, char *argv[])
         result = PQexec(conn, tmp);
         free(tmp);
         if (PQresultStatus(result) != PGRES_COMMAND_OK) {
-            fatal("Error while creating the foreign key (file) constraint: %s", PQresultErrorMessage(result));
+            fatal("Error while creating the foreign key (file) constraint: %s",
+                  PQresultErrorMessage(result));
         }
         PQclear(result);
 

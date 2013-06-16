@@ -11,6 +11,9 @@
 void
                 fatal(char *, ...);
 
+/* Not in RFC 6891, it is an arbitrary limit we define */
+#define MAX_EDNS_OPTIONS 10
+
 struct dns_packet {
     unsigned int    rank;
     struct timeval  date;
@@ -30,6 +33,8 @@ struct dns_packet {
     bool            edns0;
     unsigned int    edns0_size; /* Undefined if edns0 is false */
     bool            do_dnssec;  /* Undefined if edns0 is false */
+    unsigned int    edns_options[MAX_EDNS_OPTIONS];
+    unsigned int    num_edns_options;
     unsigned int    ancount, nscount, arcount;
 };
 
