@@ -247,7 +247,7 @@ main(int argc, char *argv[])
     unsigned long   copied;
     const char     *file_params[NUM_FILE_PARAMS];
     const char     *fileend_params[NUM_FILEEND_PARAMS];
-    unsigned int    file_id;
+    unsigned int    file_id = 0;
 
     progname = argv[0];
     while ((ch = getopt(argc, argv, "nvm:c:p")) != -1) {

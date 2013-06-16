@@ -31,7 +31,6 @@ unaligned_uint16(const uint8_t * p)
 
 /* Defaults */
 static bool     verbose = false;
-static unsigned short debug = 0;
 static unsigned long maxpackets = 0;
 
 void
