@@ -1,6 +1,7 @@
 DROP TABLE DNS_types;
 DROP TABLE DNS_Packets CASCADE;
 DROP TRIGGER trg_partitioning ON pcap_files;
+DROP TRIGGER trg_partitioning2 ON pcap_files;
 DROP TABLE PCAP_files;
 DROP TYPE protocols;
 
@@ -84,8 +85,30 @@ CREATE OR REPLACE FUNCTION partitioning() RETURNS TRIGGER AS $trg_partitioning$
     END;
 $trg_partitioning$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_partitioning AFTER INSERT ON pcap_files
-    FOR EACH ROW EXECUTE PROCEDURE partitioning();
+--CREATE TRIGGER trg_partitioning AFTER INSERT ON pcap_files
+--    FOR EACH ROW EXECUTE PROCEDURE partitioning();
+
+
+-- Using the same sequence for column 'id' for all 'dns_packets_*' tables leads to trouble : 
+--  column 'id' type is int ==> max value = 2 147 483 648 
+-- while  sequence 'dns_packets_id_seq' next_value type is 'bigint' ==> max value = 9223372036854775807
+-- With one unique sequence, and after a number of new table creations and insertion in these tables, new insertions in dns_packets_*' tables become impossible.
+
+CREATE OR REPLACE FUNCTION partitioning2() RETURNS TRIGGER AS $trg_partitioning2$
+    DECLARE
+        table_name TEXT = 'dns_packets_' || NEW.id;
+        sequence_name TEXT = 'dns_packets_' || NEW.id || '_id_seq';
+    BEGIN
+        EXECUTE 'CREATE TABLE ' || table_name || ' (check (file = ' || NEW.id ||')) INHERITS (dns_packets);';
+		EXECUTE 'CREATE SEQUENCE ' || sequence_name || ' INCREMENT BY 1 START WITH 1 CACHE 1 NO CYCLE;';
+		EXECUTE 'ALTER TABLE ' || table_name || ' ALTER COLUMN id SET default nextval(''' || sequence_name || ''');';
+        RETURN NEW;
+    END;
+$trg_partitioning2$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_partitioning2 AFTER INSERT ON pcap_files
+    FOR EACH ROW EXECUTE PROCEDURE partitioning2();
+
 
 
 -- Examples of requests:
