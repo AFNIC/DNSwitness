@@ -22,7 +22,7 @@ echo storing files from directory $DIRECTORY
 for file in $DIRECTORY/*
 do
 	echo "   => storing $file ...";
-	$PKTS2PSQL "${PKTS2PSQL_OPTS} -c '${CONNINFO}' $file"
+	$PKTS2PSQL ${PKTS2PSQL_OPTS} -c "${CONNINFO}" $file
 	sleep 30
 done
 
